@@ -31,10 +31,12 @@ static const DeviceConfig_t kDeviceConfigs[] = {
 
 static const ProcessVarDesc kProcessVarDescs[] = {
     /* TODO: populate process variables */
+    0
 };
 
 static const HmiTagDesc kHmiTagDescs[] = {
     /* TODO: populate HMI tags */
+    0
 };
 
 static const SystemConfig_t kStaticConfig = {

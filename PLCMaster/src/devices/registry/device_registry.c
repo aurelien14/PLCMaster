@@ -1,7 +1,7 @@
 /* Device registry implementation. */
 
 #include "device_registry.h"
-#include "../l230/l230_desc.h"
+#include "devices/l230/l230_desc.h"
 
 #include <stddef.h>
 #include <string.h>
