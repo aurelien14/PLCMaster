@@ -3,7 +3,7 @@
 #ifndef DEVICE_REGISTRY_H
 #define DEVICE_REGISTRY_H
 
-#include "../device_desc.h"
+#include "devices/device_desc.h"
 
 int device_registry_register(const DeviceDesc_t *descriptor);
 const DeviceDesc_t *device_registry_find(const char *model);

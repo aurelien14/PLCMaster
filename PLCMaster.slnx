@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="PLCMaster/PLCMaster.vcxproj" />
+  <Project Path="PLCMaster/PLCMaster.vcxproj" Id="3294e1cb-e1c1-4ddf-beaf-c125a037e139" />
 </Solution>

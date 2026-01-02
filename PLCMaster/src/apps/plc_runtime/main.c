@@ -2,9 +2,9 @@
 
 #include <stdio.h>
 
-#include "runtime.h"
-#include "config_static.h"
-#include "system_builder.h"
+#include "core/runtime/runtime.h"
+#include "system/config/config_static.h"
+#include "system/builder/system_builder.h"
 
 int main(void)
 {
