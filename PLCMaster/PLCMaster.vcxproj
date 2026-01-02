@@ -133,6 +133,7 @@
     <ClCompile Include="src\core\runtime\runtime.c" />
     <ClCompile Include="src\core\rt\rt_time.c" />
     <ClCompile Include="src\core\status\status_tags.c" />
+    <ClCompile Include="src\core\tag\tag_api.c" />
     <ClCompile Include="src\core\tag\tag_table.c" />
     <ClCompile Include="src\devices\l230\l230_desc.c" />
     <ClCompile Include="src\devices\registry\device_registry.c" />
