@@ -1,9 +1,11 @@
-/* Device registry interface for registering and retrieving devices. TODO: finalize registry design. */
+/* Device registry interface for registering and retrieving devices. */
 
 #ifndef DEVICE_REGISTRY_H
 #define DEVICE_REGISTRY_H
 
-int device_registry_register(const char *identifier);
-void *device_registry_find(const char *identifier);
+#include "../device_desc.h"
+
+int device_registry_register(const DeviceDesc_t *descriptor);
+const DeviceDesc_t *device_registry_find(const char *model);
 
 #endif /* DEVICE_REGISTRY_H */
