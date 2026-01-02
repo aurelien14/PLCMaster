@@ -130,6 +130,7 @@
     <ClCompile Include="src\apps\plc_runtime\main.c" />
     <ClCompile Include="src\backends\ethercat\ec_backend.c" />
     <ClCompile Include="src\core\plc\plc_scheduler.c" />
+    <ClCompile Include="src\core\runtime\runtime.c" />
     <ClCompile Include="src\core\rt\rt_time.c" />
     <ClCompile Include="src\core\status\status_tags.c" />
     <ClCompile Include="src\core\tag\tag_table.c" />
@@ -141,6 +142,7 @@
   <ItemGroup>
     <ClInclude Include="src\backends\backend_iface.h" />
     <ClInclude Include="src\core\plc\plc_scheduler.h" />
+    <ClInclude Include="src\core\runtime\runtime.h" />
     <ClInclude Include="src\core\rt\rt_time.h" />
     <ClInclude Include="src\core\status\status_tags.h" />
     <ClInclude Include="src\core\tag\tag_api.h" />
