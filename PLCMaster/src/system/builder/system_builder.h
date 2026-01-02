@@ -3,6 +3,9 @@
 #ifndef SYSTEM_BUILDER_H
 #define SYSTEM_BUILDER_H
 
-int system_builder_run(void);
+#include "runtime.h"
+#include "config_static.h"
+
+int system_build(Runtime_t *rt, const SystemConfig_t *config);
 
 #endif /* SYSTEM_BUILDER_H */
