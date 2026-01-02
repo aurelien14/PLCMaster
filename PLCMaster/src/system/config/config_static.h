@@ -24,7 +24,7 @@ typedef struct DeviceConfig
     {
         uint16_t expected_position;
     } ethercat;
-    uint16_t io_addr; /* Logical address for %I/%Q */
+    uint16_t io_addr; /* Stable logical address for %I/%Q (independent of EtherCAT position) */
     struct
     {
         uint32_t vendor_id;    /* TODO: set vendor id */
