@@ -2,7 +2,9 @@
 
 #include "system_builder.h"
 
-int system_builder_run(void)
+int system_build(Runtime_t *rt, const SystemConfig_t *config)
 {
+    (void)rt;
+    (void)config;
     return -1;
 }

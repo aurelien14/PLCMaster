@@ -131,8 +131,10 @@
     <ClCompile Include="src\backends\ethercat\ec_backend.c" />
     <ClCompile Include="src\backends\modbus\mb_backend.c" />
     <ClCompile Include="src\core\plc\plc_scheduler.c" />
+    <ClCompile Include="src\core\runtime\runtime.c" />
     <ClCompile Include="src\core\rt\rt_time.c" />
     <ClCompile Include="src\core\status\status_tags.c" />
+    <ClCompile Include="src\core\tag\tag_api.c" />
     <ClCompile Include="src\core\tag\tag_table.c" />
     <ClCompile Include="src\devices\l230\l230_desc.c" />
     <ClCompile Include="src\devices\registry\device_registry.c" />
@@ -144,6 +146,7 @@
     <ClInclude Include="src\backends\ethercat\ec_backend.h" />
     <ClInclude Include="src\backends\modbus\mb_backend.h" />
     <ClInclude Include="src\core\plc\plc_scheduler.h" />
+    <ClInclude Include="src\core\runtime\runtime.h" />
     <ClInclude Include="src\core\rt\rt_time.h" />
     <ClInclude Include="src\core\status\status_tags.h" />
     <ClInclude Include="src\core\tag\tag_api.h" />

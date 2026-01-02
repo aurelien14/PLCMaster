@@ -24,10 +24,16 @@
     <ClCompile Include="src\core\plc\plc_scheduler.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\runtime\runtime.c">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
     <ClCompile Include="src\core\rt\rt_time.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
     <ClCompile Include="src\core\status\status_tags.c">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\tag\tag_api.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
     <ClCompile Include="src\core\tag\tag_table.c">
@@ -54,6 +60,9 @@
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
     <ClInclude Include="src\core\plc\plc_scheduler.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\runtime\runtime.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
     <ClInclude Include="src\core\rt\rt_time.h">
