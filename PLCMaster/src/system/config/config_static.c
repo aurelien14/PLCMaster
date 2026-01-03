@@ -29,9 +29,13 @@ static const DeviceConfig_t kDeviceConfigs[] = {
     },
 };
 
-static const ProcessVarDesc *kProcessVarDescs = NULL;
-
-static const HmiTagDesc *kHmiTagDescs = NULL;
+static const ProcessVarDesc_t kProcessVarDescs[] = {
+    {
+        .name = "test_u32",
+        .type = TAG_T_U32,
+        .comment = "Test process variable",
+    },
+};
 
 static const SystemConfig_t kStaticConfig = {
     .backends = kBackendConfigs,
@@ -39,8 +43,8 @@ static const SystemConfig_t kStaticConfig = {
     .devices = kDeviceConfigs,
     .device_count = sizeof(kDeviceConfigs) / sizeof(kDeviceConfigs[0]),
     .process_vars = kProcessVarDescs,
-    .process_var_count = 0,
-    .hmi_tags = kHmiTagDescs,
+    .process_var_count = sizeof(kProcessVarDescs) / sizeof(kProcessVarDescs[0]),
+    .hmi_tags = NULL,
     .hmi_tag_count = 0,
 };
 

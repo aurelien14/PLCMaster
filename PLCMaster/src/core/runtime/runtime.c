@@ -2,6 +2,8 @@
 
 #include "runtime.h"
 
+#include <stdlib.h>
+
 int runtime_init(Runtime_t* rt)
 {
 	if (rt == NULL)
@@ -14,6 +16,8 @@ int runtime_init(Runtime_t* rt)
 		return -1;
 	}
 
+	rt->proc_storage = NULL;
+	rt->proc_storage_size = 0U;
 	rt->status_view = NULL;
 	rt->backends = NULL;
 
@@ -28,6 +32,9 @@ void runtime_deinit(Runtime_t* rt)
 	}
 
 	tag_table_deinit(&rt->tag_table);
+	free(rt->proc_storage);
+	rt->proc_storage = NULL;
+	rt->proc_storage_size = 0U;
 	rt->status_view = NULL;
 	rt->backends = NULL;
 }
