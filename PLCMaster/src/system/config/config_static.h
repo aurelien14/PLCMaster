@@ -36,14 +36,25 @@ typedef struct DeviceConfig
 
 typedef struct ProcessVarDesc
 {
-	const char *name;
-	TagType_t type;
-	const char *comment;
+	const char *name;          /* ex: "temp_sp" */
+	TagType_t type;            /* BOOL/U32/REAL... */
+	union
+	{
+		int i;
+		uint32_t u32;
+		float f;
+		uint8_t u8;
+		uint16_t u16;
+		bool b;
+	} initial;
 } ProcessVarDesc_t;
 
+typedef enum { HMI_RO = 0, HMI_RW = 1 } HmiAccess_t;
 typedef struct HmiTagDesc
 {
-    uint8_t placeholder; /* TODO: describe HMI tags */
+    const char *name;     /* ex: "temp_setpoint" */
+    const char *alias_of; /* ex: "proc.temp_sp" */
+    HmiAccess_t access;   /* RO/RW */
 } HmiTagDesc;
 
 typedef struct SystemConfig

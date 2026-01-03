@@ -2,7 +2,7 @@
 
 #include "runtime.h"
 
-#include <stdlib.h>
+#include <string.h>
 
 int runtime_init(Runtime_t* rt)
 {
@@ -16,8 +16,7 @@ int runtime_init(Runtime_t* rt)
 		return -1;
 	}
 
-	rt->proc_storage = NULL;
-	rt->proc_storage_size = 0U;
+	memset(&rt->proc_store, 0, sizeof(rt->proc_store));
 	rt->status_view = NULL;
 	rt->backends = NULL;
 
@@ -32,9 +31,7 @@ void runtime_deinit(Runtime_t* rt)
 	}
 
 	tag_table_deinit(&rt->tag_table);
-	free(rt->proc_storage);
-	rt->proc_storage = NULL;
-	rt->proc_storage_size = 0U;
+	memset(&rt->proc_store, 0, sizeof(rt->proc_store));
 	rt->status_view = NULL;
 	rt->backends = NULL;
 }

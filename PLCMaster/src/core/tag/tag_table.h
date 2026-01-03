@@ -10,20 +10,29 @@
 
 typedef uint32_t TagId_t; /* 0 = invalid */
 
+typedef enum TagKind
+{
+    TAGK_IO = 0,
+    TAGK_PROC = 1,
+    TAGK_HMI_ALIAS = 2
+} TagKind_t;
+
 typedef struct TagEntry
 {
-	char full_name[128];
-	TagType_t type;
-	TagDir_t dir;
-	uint32_t offset_byte;
-	uint8_t bit_index;
-	char backend_name[16];
+    char full_name[128];
+    TagType_t type;
+    TagDir_t dir;
+    uint32_t offset_byte;
+    uint8_t bit_index;
+    char backend_name[16];
+    TagKind_t kind;
+    uint32_t proc_index;
 } TagEntry_t;
 
 typedef struct TagTable
 {
-	TagEntry_t entries[MAX_TAGS];
-	uint32_t count;
+    TagEntry_t entries[MAX_TAGS];
+    uint32_t count;
 } TagTable_t;
 
 
@@ -32,5 +41,6 @@ void tag_table_deinit(TagTable_t *t);
 int tag_table_add(TagTable_t *t, const TagEntry_t *e);
 TagId_t tag_table_find_id(const TagTable_t *t, const char *full_name);
 const TagEntry_t *tag_table_get(const TagTable_t *t, TagId_t id);
+uint32_t tag_table_count(const TagTable_t *t);
 
 #endif /* TAG_TABLE_H */

@@ -72,6 +72,8 @@ int tag_table_add(TagTable_t *t, const TagEntry_t *e)
 	dest->dir = e->dir;
 	dest->offset_byte = e->offset_byte;
 	dest->bit_index = e->bit_index;
+	dest->kind = e->kind;
+	dest->proc_index = e->proc_index;
 
 	t->count++;
 	return 0;
@@ -105,4 +107,14 @@ const TagEntry_t *tag_table_get(const TagTable_t *t, TagId_t id)
 	}
 
 	return &t->entries[id - 1U];
+}
+
+uint32_t tag_table_count(const TagTable_t *t)
+{
+	if (t == NULL)
+	{
+		return 0U;
+	}
+
+	return t->count;
 }
