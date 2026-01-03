@@ -1,8 +1,5 @@
 /* Runtime lifecycle stub implementation. TODO: wire in runtime components. */
 
-#include <stddef.h>
-#include <string.h>
-
 #include "runtime.h"
 
 int runtime_init(Runtime_t* rt)
@@ -17,7 +14,6 @@ int runtime_init(Runtime_t* rt)
 		return -1;
 	}
 
-	memset(&rt->io_view, 0, sizeof(rt->io_view));
 	rt->status_view = NULL;
 	rt->backends = NULL;
 
@@ -32,7 +28,6 @@ void runtime_deinit(Runtime_t* rt)
 	}
 
 	tag_table_deinit(&rt->tag_table);
-	memset(&rt->io_view, 0, sizeof(rt->io_view));
 	rt->status_view = NULL;
 	rt->backends = NULL;
 }

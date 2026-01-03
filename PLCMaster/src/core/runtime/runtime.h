@@ -4,12 +4,10 @@
 #define RUNTIME_H
 
 #include "core/tag/tag_table.h"
-#include "core/runtime/io_view.h"
 
 typedef struct Runtime
 {
 	TagTable_t tag_table;
-	IOView_t io_view;
 	void* status_view;
 	void* backends;
 } Runtime_t;

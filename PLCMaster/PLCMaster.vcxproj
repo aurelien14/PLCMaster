@@ -144,6 +144,7 @@
     <ClCompile Include="src\core\tag\tag_table.c" />
     <ClCompile Include="src\devices\l230\l230_desc.c" />
     <ClCompile Include="src\devices\registry\device_registry.c" />
+    <ClCompile Include="src\plc\plc_app.c" />
     <ClCompile Include="src\system\builder\system_builder.c" />
     <ClCompile Include="src\system\config\config_static.c" />
   </ItemGroup>
@@ -160,6 +161,8 @@
     <ClInclude Include="src\devices\device_desc.h" />
     <ClInclude Include="src\devices\l230\l230_desc.h" />
     <ClInclude Include="src\devices\registry\device_registry.h" />
+    <ClInclude Include="src\plc\io_view.h" />
+    <ClInclude Include="src\plc\plc_app.h" />
     <ClInclude Include="src\system\builder\system_builder.h" />
     <ClInclude Include="src\system\config\config_static.h" />
   </ItemGroup>
