@@ -29,13 +29,9 @@ static const DeviceConfig_t kDeviceConfigs[] = {
     },
 };
 
-static const ProcessVarDesc kProcessVarDescs[] = {
-    /* TODO: populate process variables */
-};
+static const ProcessVarDesc *kProcessVarDescs = NULL;
 
-static const HmiTagDesc kHmiTagDescs[] = {
-    /* TODO: populate HMI tags */
-};
+static const HmiTagDesc *kHmiTagDescs = NULL;
 
 static const SystemConfig_t kStaticConfig = {
     .backends = kBackendConfigs,
@@ -43,9 +39,9 @@ static const SystemConfig_t kStaticConfig = {
     .devices = kDeviceConfigs,
     .device_count = sizeof(kDeviceConfigs) / sizeof(kDeviceConfigs[0]),
     .process_vars = kProcessVarDescs,
-    .process_var_count = sizeof(kProcessVarDescs) / sizeof(kProcessVarDescs[0]),
+    .process_var_count = 0,
     .hmi_tags = kHmiTagDescs,
-    .hmi_tag_count = sizeof(kHmiTagDescs) / sizeof(kHmiTagDescs[0]),
+    .hmi_tag_count = 0,
 };
 
 const SystemConfig_t *get_static_config(void)

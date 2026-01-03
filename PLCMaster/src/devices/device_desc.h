@@ -10,16 +10,16 @@ extern "C" {
 #endif
 
 typedef enum TagType_t {
-    BOOL = 0,
-    U8,
-    U16,
-    U32,
-    REAL
+    TAG_T_BOOL = 0,
+    TAG_T_U8,
+    TAG_T_U16,
+    TAG_T_U32,
+    TAG_T_REAL
 } TagType_t;
 
 typedef enum TagDir_t {
-    IN = 0,
-    OUT
+    TAG_DIR_IN = 0,
+    TAG_DIR_OUT
 } TagDir_t;
 
 typedef struct TagDesc_t {
