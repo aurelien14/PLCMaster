@@ -18,8 +18,8 @@ int main(void)
 	{
 		printf("OK\n");
 		printf("Tag count: %u\n", rt.tag_table.count);
-		printf("ID CPU_IO.X15_Out0 = %u\n", tag_table_find_id(&rt.tag_table, "CPU_IO.X15_Out0"));
-		printf("ID CPU_IO.X21_CPU_Pt1.Pt_Value = %u\n", tag_table_find_id(&rt.tag_table, "CPU_IO.X21_CPU_Pt1.Pt_Value"));
+		printf("ID CPU_IO.X15_Out0 = %u\n", rt.io_view.X15_Out0);
+		printf("ID CPU_IO.X21_CPU_Pt1.Pt_Value = %u\n", rt.io_view.X21_CPU_Pt1_Pt_Value);
 	}
 	else
 	{
