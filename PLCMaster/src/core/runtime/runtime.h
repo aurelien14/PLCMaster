@@ -3,12 +3,14 @@
 #ifndef RUNTIME_H
 #define RUNTIME_H
 
+#include "core/tag/tag_table.h"
+
 typedef struct Runtime
 {
-    void* tag_table;
-    void* io_view;
-    void* status_view;
-    void* backends;
+	TagTable_t tag_table;
+	void* io_view;
+	void* status_view;
+	void* backends;
 } Runtime_t;
 
 int runtime_init(Runtime_t* rt);
