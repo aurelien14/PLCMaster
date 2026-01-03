@@ -7,6 +7,62 @@
 #include <stdio.h>
 #include <string.h>
 
+static int populate_io_view(Runtime_t *rt)
+{
+	size_t i;
+	static const struct
+	{
+		const char *name;
+		TagId_t *field;
+	} kMappings[] = {
+		{ "CPU_IO.X15_Out0", &rt->io_view.X15_Out0 },
+		{ "CPU_IO.X12_Out1", &rt->io_view.X12_Out1 },
+		{ "CPU_IO.X13_Out2", &rt->io_view.X13_Out2 },
+		{ "CPU_IO.X3_Out3", &rt->io_view.X3_Out3 },
+		{ "CPU_IO.X4_Out4", &rt->io_view.X4_Out4 },
+		{ "CPU_IO.X14_Out5", &rt->io_view.X14_Out5 },
+		{ "CPU_IO.X1_Out6", &rt->io_view.X1_Out6 },
+		{ "CPU_IO.X11_Out0", &rt->io_view.X11_Out0 },
+		{ "CPU_IO.X10_Out1", &rt->io_view.X10_Out1 },
+		{ "CPU_IO.X5_Out2", &rt->io_view.X5_Out2 },
+		{ "CPU_IO.X6_Out3", &rt->io_view.X6_Out3 },
+		{ "CPU_IO.X7_Out4", &rt->io_view.X7_Out4 },
+		{ "CPU_IO.X8_Out5", &rt->io_view.X8_Out5 },
+		{ "CPU_IO.X9_Out6", &rt->io_view.X9_Out6 },
+		{ "CPU_IO.X8a_Out7", &rt->io_view.X8a_Out7 },
+		{ "CPU_IO.X30_2_In0", &rt->io_view.X30_2_In0 },
+		{ "CPU_IO.X30_4_In1", &rt->io_view.X30_4_In1 },
+		{ "CPU_IO.X30_6_In2", &rt->io_view.X30_6_In2 },
+		{ "CPU_IO.X30_8_In3", &rt->io_view.X30_8_In3 },
+		{ "CPU_IO.X30_11_In4", &rt->io_view.X30_11_In4 },
+		{ "CPU_IO.X30_13_In5", &rt->io_view.X30_13_In5 },
+		{ "CPU_IO.X30_19_In6", &rt->io_view.X30_19_In6 },
+		{ "CPU_IO.X30_21_In7", &rt->io_view.X30_21_In7 },
+		{ "CPU_IO.X55_In0", &rt->io_view.X55_In0 },
+		{ "CPU_IO.X21_CPU_Pt1.Pt_Value", &rt->io_view.X21_CPU_Pt1_Pt_Value },
+		{ "CPU_IO.X21_CPU_Pt1.Pt_State", &rt->io_view.X21_CPU_Pt1_Pt_State },
+		{ "CPU_IO.X22_CPU_Pt2.Pt_Value", &rt->io_view.X22_CPU_Pt2_Pt_Value },
+		{ "CPU_IO.X22_CPU_Pt2.Pt_State", &rt->io_view.X22_CPU_Pt2_Pt_State },
+		{ "CPU_IO.X23_CPU_VC1.VC_Value", &rt->io_view.X23_CPU_VC1_VC_Value },
+		{ "CPU_IO.X23_CPU_VC1.VC_State", &rt->io_view.X23_CPU_VC1_VC_State },
+		{ "CPU_IO.X21_CPU_Pt1_Ctrl", &rt->io_view.X21_CPU_Pt1_Ctrl },
+		{ "CPU_IO.X21_CPU_Pt2_Ctrl", &rt->io_view.X21_CPU_Pt2_Ctrl },
+		{ "CPU_IO.X23_CPU_VC1_Ctrl", &rt->io_view.X23_CPU_VC1_Ctrl },
+	};
+
+	for (i = 0; i < sizeof(kMappings) / sizeof(kMappings[0]); ++i)
+	{
+		TagId_t id = tag_table_find_id(&rt->tag_table, kMappings[i].name);
+		if (id == 0)
+		{
+			return -1;
+		}
+		*(kMappings[i].field) = id;
+	}
+
+	return 0;
+}
+
 int system_build(Runtime_t *rt, const SystemConfig_t *config)
 {
 	size_t device_index;
@@ -83,6 +139,11 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 				return -1;
 			}
 		}
+	}
+
+	if (populate_io_view(rt) != 0)
+	{
+		return -1;
 	}
 
 	return 0;
