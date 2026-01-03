@@ -6,28 +6,32 @@
 
 int runtime_init(Runtime_t* rt)
 {
-    if (rt == NULL)
-    {
-        return -1;
-    }
+	if (rt == NULL)
+	{
+		return -1;
+	}
 
-    rt->tag_table = NULL;
-    rt->io_view = NULL;
-    rt->status_view = NULL;
-    rt->backends = NULL;
+	if (tag_table_init(&rt->tag_table) != 0)
+	{
+		return -1;
+	}
 
-    return 0;
+	rt->io_view = NULL;
+	rt->status_view = NULL;
+	rt->backends = NULL;
+
+	return 0;
 }
 
 void runtime_deinit(Runtime_t* rt)
 {
-    if (rt == NULL)
-    {
-        return;
-    }
+	if (rt == NULL)
+	{
+		return;
+	}
 
-    rt->tag_table = NULL;
-    rt->io_view = NULL;
-    rt->status_view = NULL;
-    rt->backends = NULL;
+	tag_table_deinit(&rt->tag_table);
+	rt->io_view = NULL;
+	rt->status_view = NULL;
+	rt->backends = NULL;
 }

@@ -8,22 +8,25 @@
 
 int main(void)
 {
-    Runtime_t rt;
-    runtime_init(&rt);
+	Runtime_t rt;
+	runtime_init(&rt);
 
-    const SystemConfig_t *cfg = get_static_config();
-    int rc = system_build(&rt, cfg);
+	const SystemConfig_t *cfg = get_static_config();
+	int rc = system_build(&rt, cfg);
 
-    if (rc == 0)
-    {
-        printf("OK\n");
-    }
-    else
-    {
-        printf("FAIL rc=%d\n", rc);
-    }
+	if (rc == 0)
+	{
+		printf("OK\n");
+		printf("Tag count: %u\n", rt.tag_table.count);
+		printf("ID CPU_IO.X15_Out0 = %u\n", tag_table_find_id(&rt.tag_table, "CPU_IO.X15_Out0"));
+		printf("ID CPU_IO.X21_CPU_Pt1.Pt_Value = %u\n", tag_table_find_id(&rt.tag_table, "CPU_IO.X21_CPU_Pt1.Pt_Value"));
+	}
+	else
+	{
+		printf("FAIL rc=%d\n", rc);
+	}
 
-    runtime_deinit(&rt);
+	runtime_deinit(&rt);
 
-    return rc == 0 ? 0 : 1;
+	return rc == 0 ? 0 : 1;
 }
