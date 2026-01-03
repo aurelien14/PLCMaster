@@ -3,44 +3,21 @@
 #include "tag_api.h"
 
 #include <stddef.h>
-#include <string.h>
 
-static const TagTable_t *g_tags = NULL;
-static uint8_t *g_proc_storage = NULL;
-static size_t g_proc_storage_size = 0U;
-
-static size_t get_type_size(TagType_t type)
-{
-	switch (type) {
-	case TAG_T_BOOL:
-		return 1U;
-	case TAG_T_U8:
-		return 1U;
-	case TAG_T_U16:
-		return 2U;
-	case TAG_T_U32:
-		return 4U;
-	case TAG_T_REAL:
-		return sizeof(float);
-	default:
-		return 0U;
-	}
-}
-
-static int get_proc_entry(TagId_t id, TagType_t expected_type, const TagEntry_t **out_entry)
+static int get_proc_value(Runtime_t* rt, TagId_t id, TagType_t expected_type, const TagEntry_t **out_entry, ProcValue_t **out_value)
 {
 	const TagEntry_t *entry;
 
-	if (g_tags == NULL || g_proc_storage == NULL || out_entry == NULL) {
+	if (rt == NULL || out_entry == NULL || out_value == NULL) {
 		return -1;
 	}
 
-	entry = tag_table_get(g_tags, id);
+	entry = tag_table_get(&rt->tag_table, id);
 	if (entry == NULL) {
 		return -1;
 	}
 
-	if (strncmp(entry->backend_name, "proc", sizeof(entry->backend_name)) != 0) {
+	if (entry->kind != TAGK_PROC) {
 		return -1;
 	}
 
@@ -48,178 +25,174 @@ static int get_proc_entry(TagId_t id, TagType_t expected_type, const TagEntry_t 
 		return -1;
 	}
 
-	if (entry->bit_index >= 8U) {
-		return -1;
-	}
-
-	if (entry->offset_byte + get_type_size(entry->type) > g_proc_storage_size) {
+	if (entry->proc_index >= rt->proc_store.count) {
 		return -1;
 	}
 
 	*out_entry = entry;
-	return 0;
-}
-
-int tag_api_bind_proc_storage(const TagTable_t *t, uint8_t *buffer, size_t size)
-{
-	if (t == NULL || buffer == NULL || size == 0U) {
-		g_tags = NULL;
-		g_proc_storage = NULL;
-		g_proc_storage_size = 0U;
+	*out_value = &rt->proc_store.values[entry->proc_index];
+	if ((*out_value)->type != expected_type) {
 		return -1;
 	}
-
-	g_tags = t;
-	g_proc_storage = buffer;
-	g_proc_storage_size = size;
 	return 0;
 }
 
-int tag_read_bool(TagId_t id, bool *out)
+int tag_read_bool(Runtime_t* rt, TagId_t id, bool *out)
 {
 	const TagEntry_t *entry;
-	uint8_t byte_val;
+	ProcValue_t *v;
 
 	if (out == NULL) {
 		return -1;
 	}
 
-	if (get_proc_entry(id, TAG_T_BOOL, &entry) != 0) {
+	if (get_proc_value(rt, id, TAG_T_BOOL, &entry, &v) != 0) {
 		return -1;
 	}
 
-	byte_val = g_proc_storage[entry->offset_byte];
-	*out = ((byte_val >> entry->bit_index) & 0x1U) != 0U;
+	(void)entry;
+	*out = v->v.b;
 	return 0;
 }
 
-int tag_write_bool(TagId_t id, bool v)
+int tag_write_bool(Runtime_t* rt, TagId_t id, bool value)
 {
 	const TagEntry_t *entry;
-	uint8_t *byte_ptr;
+	ProcValue_t *v;
 
-	if (get_proc_entry(id, TAG_T_BOOL, &entry) != 0) {
+	if (get_proc_value(rt, id, TAG_T_BOOL, &entry, &v) != 0) {
 		return -1;
 	}
 
-	byte_ptr = &g_proc_storage[entry->offset_byte];
-	if (v) {
-		*byte_ptr = (uint8_t)(*byte_ptr | (uint8_t)(1U << entry->bit_index));
-	} else {
-		*byte_ptr = (uint8_t)(*byte_ptr & (uint8_t)~(uint8_t)(1U << entry->bit_index));
-	}
-
+	(void)entry;
+	v->v.b = value;
 	return 0;
 }
 
-int tag_read_u8(TagId_t id, uint8_t *out)
+int tag_read_u8(Runtime_t* rt, TagId_t id, uint8_t *out)
 {
 	const TagEntry_t *entry;
+	ProcValue_t *v;
 
 	if (out == NULL) {
 		return -1;
 	}
 
-	if (get_proc_entry(id, TAG_T_U8, &entry) != 0) {
+	if (get_proc_value(rt, id, TAG_T_U8, &entry, &v) != 0) {
 		return -1;
 	}
 
-	memcpy(out, &g_proc_storage[entry->offset_byte], sizeof(uint8_t));
+	(void)entry;
+	*out = v->v.u8;
 	return 0;
 }
 
-int tag_write_u8(TagId_t id, uint8_t v)
+int tag_write_u8(Runtime_t* rt, TagId_t id, uint8_t value)
 {
 	const TagEntry_t *entry;
+	ProcValue_t *v;
 
-	if (get_proc_entry(id, TAG_T_U8, &entry) != 0) {
+	if (get_proc_value(rt, id, TAG_T_U8, &entry, &v) != 0) {
 		return -1;
 	}
 
-	memcpy(&g_proc_storage[entry->offset_byte], &v, sizeof(uint8_t));
+	(void)entry;
+	v->v.u8 = value;
 	return 0;
 }
 
-int tag_read_u16(TagId_t id, uint16_t *out)
+int tag_read_u16(Runtime_t* rt, TagId_t id, uint16_t *out)
 {
 	const TagEntry_t *entry;
+	ProcValue_t *v;
 
 	if (out == NULL) {
 		return -1;
 	}
 
-	if (get_proc_entry(id, TAG_T_U16, &entry) != 0) {
+	if (get_proc_value(rt, id, TAG_T_U16, &entry, &v) != 0) {
 		return -1;
 	}
 
-	memcpy(out, &g_proc_storage[entry->offset_byte], sizeof(uint16_t));
+	(void)entry;
+	*out = v->v.u16;
 	return 0;
 }
 
-int tag_write_u16(TagId_t id, uint16_t v)
+int tag_write_u16(Runtime_t* rt, TagId_t id, uint16_t value)
 {
 	const TagEntry_t *entry;
+	ProcValue_t *v;
 
-	if (get_proc_entry(id, TAG_T_U16, &entry) != 0) {
+	if (get_proc_value(rt, id, TAG_T_U16, &entry, &v) != 0) {
 		return -1;
 	}
 
-	memcpy(&g_proc_storage[entry->offset_byte], &v, sizeof(uint16_t));
+	(void)entry;
+	v->v.u16 = value;
 	return 0;
 }
 
-int tag_read_u32(TagId_t id, uint32_t *out)
+int tag_read_u32(Runtime_t* rt, TagId_t id, uint32_t *out)
 {
 	const TagEntry_t *entry;
+	ProcValue_t *v;
 
 	if (out == NULL) {
 		return -1;
 	}
 
-	if (get_proc_entry(id, TAG_T_U32, &entry) != 0) {
+	if (get_proc_value(rt, id, TAG_T_U32, &entry, &v) != 0) {
 		return -1;
 	}
 
-	memcpy(out, &g_proc_storage[entry->offset_byte], sizeof(uint32_t));
+	(void)entry;
+	*out = v->v.u32;
 	return 0;
 }
 
-int tag_write_u32(TagId_t id, uint32_t v)
+int tag_write_u32(Runtime_t* rt, TagId_t id, uint32_t value)
 {
 	const TagEntry_t *entry;
+	ProcValue_t *v;
 
-	if (get_proc_entry(id, TAG_T_U32, &entry) != 0) {
+	if (get_proc_value(rt, id, TAG_T_U32, &entry, &v) != 0) {
 		return -1;
 	}
 
-	memcpy(&g_proc_storage[entry->offset_byte], &v, sizeof(uint32_t));
+	(void)entry;
+	v->v.u32 = value;
 	return 0;
 }
 
-int tag_read_real(TagId_t id, float *out)
+int tag_read_real(Runtime_t* rt, TagId_t id, float *out)
 {
 	const TagEntry_t *entry;
+	ProcValue_t *v;
 
 	if (out == NULL) {
 		return -1;
 	}
 
-	if (get_proc_entry(id, TAG_T_REAL, &entry) != 0) {
+	if (get_proc_value(rt, id, TAG_T_REAL, &entry, &v) != 0) {
 		return -1;
 	}
 
-	memcpy(out, &g_proc_storage[entry->offset_byte], sizeof(float));
+	(void)entry;
+	*out = v->v.f;
 	return 0;
 }
 
-int tag_write_real(TagId_t id, float v)
+int tag_write_real(Runtime_t* rt, TagId_t id, float value)
 {
 	const TagEntry_t *entry;
+	ProcValue_t *v;
 
-	if (get_proc_entry(id, TAG_T_REAL, &entry) != 0) {
+	if (get_proc_value(rt, id, TAG_T_REAL, &entry, &v) != 0) {
 		return -1;
 	}
 
-	memcpy(&g_proc_storage[entry->offset_byte], &v, sizeof(float));
+	(void)entry;
+	v->v.f = value;
 	return 0;
 }

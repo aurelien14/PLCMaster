@@ -31,9 +31,19 @@ static const DeviceConfig_t kDeviceConfigs[] = {
 
 static const ProcessVarDesc_t kProcessVarDescs[] = {
     {
-        .name = "test_u32",
-        .type = TAG_T_U32,
-        .comment = "Test process variable",
+        .name = "temp_sp",
+        .type = TAG_T_REAL,
+        .initial = {.f = 20.0f},
+    },
+    {
+        .name = "run_cmd",
+        .type = TAG_T_BOOL,
+        .initial = {.b = false},
+    },
+    {
+        .name = "alarm_code",
+        .type = TAG_T_U16,
+        .initial = {.u16 = 0},
     },
 };
 

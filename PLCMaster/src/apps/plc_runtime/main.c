@@ -1,5 +1,6 @@
 /* PLC runtime entry point. TODO: wire runtime components together. */
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -26,29 +27,45 @@ int main(void)
 
 	if (rc == 0)
 	{
-		TagId_t proc_id = tag_table_find_id(&rt.tag_table, "proc.test_u32");
-		uint32_t read_value = 0U;
-		uint32_t written_value = 1234U;
+		TagId_t temp_sp_id = tag_table_find_id(&rt.tag_table, "proc.temp_sp");
+		TagId_t run_cmd_id = tag_table_find_id(&rt.tag_table, "proc.run_cmd");
+		float temp_read = 0.0f;
+		bool run_read = false;
 
-		if (proc_id == 0)
+		if (temp_sp_id == 0 || run_cmd_id == 0)
 		{
 			rc = -1;
 		}
-		else
+		if (rc == 0)
 		{
-			rc = tag_write_u32(proc_id, written_value);
-			if (rc == 0)
-			{
-				rc = tag_read_u32(proc_id, &read_value);
-			}
-			if (rc == 0 && read_value != written_value)
-			{
-				rc = -1;
-			}
-			if (rc == 0)
-			{
-				printf("proc.test_u32 = %u\n", read_value);
-			}
+			rc = tag_read_real(&rt, temp_sp_id, &temp_read);
+		}
+		if (rc == 0)
+		{
+			printf("proc.temp_sp initial = %.2f\n", temp_read);
+			rc = tag_write_real(&rt, temp_sp_id, 25.5f);
+		}
+		if (rc == 0)
+		{
+			rc = tag_read_real(&rt, temp_sp_id, &temp_read);
+		}
+		if (rc == 0)
+		{
+			printf("proc.temp_sp after write = %.2f\n", temp_read);
+			rc = tag_read_bool(&rt, run_cmd_id, &run_read);
+		}
+		if (rc == 0)
+		{
+			printf("proc.run_cmd initial = %s\n", run_read ? "true" : "false");
+			rc = tag_write_bool(&rt, run_cmd_id, true);
+		}
+		if (rc == 0)
+		{
+			rc = tag_read_bool(&rt, run_cmd_id, &run_read);
+		}
+		if (rc == 0)
+		{
+			printf("proc.run_cmd after write = %s\n", run_read ? "true" : "false");
 		}
 	}
 
