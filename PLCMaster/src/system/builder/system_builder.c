@@ -2,10 +2,31 @@
 
 #include "system_builder.h"
 
+#include "core/tag/tag_api.h"
 #include "devices/registry/device_registry.h"
 
+#include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+static size_t get_type_size(TagType_t type)
+{
+	switch (type) {
+	case TAG_T_BOOL:
+		return 1U;
+	case TAG_T_U8:
+		return 1U;
+	case TAG_T_U16:
+		return 2U;
+	case TAG_T_U32:
+		return 4U;
+	case TAG_T_REAL:
+		return sizeof(float);
+	default:
+		return 0U;
+	}
+}
 
 int system_build(Runtime_t *rt, const SystemConfig_t *config)
 {
@@ -22,6 +43,12 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 
 	if (config->backend_count == 0 || config->device_count == 0) {
 		return -1;
+	}
+
+	if (rt->proc_storage != NULL) {
+		free(rt->proc_storage);
+		rt->proc_storage = NULL;
+		rt->proc_storage_size = 0U;
 	}
 
 	for (device_index = 0; device_index < config->device_count; ++device_index) {
@@ -46,6 +73,65 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 
 		if (device_registry_find(device_cfg->model) == NULL) {
 			return -1;
+		}
+	}
+
+	if (config->process_var_count > 0 && config->process_vars == NULL) {
+		return -1;
+	}
+
+	if (config->process_vars != NULL) {
+		size_t process_index;
+		uint32_t proc_offset = 0U;
+
+		for (process_index = 0; process_index < config->process_var_count; ++process_index) {
+			const ProcessVarDesc_t *proc_desc = &config->process_vars[process_index];
+			TagEntry_t entry;
+			int rc;
+			size_t type_size;
+
+			if (proc_desc->name == NULL) {
+				return -1;
+			}
+
+			type_size = get_type_size(proc_desc->type);
+			if (type_size == 0U) {
+				return -1;
+			}
+
+			if (proc_offset > UINT32_MAX - (uint32_t)type_size) {
+				return -1;
+			}
+
+			memset(&entry, 0, sizeof(entry));
+			rc = snprintf(entry.full_name, sizeof(entry.full_name), "proc.%s", proc_desc->name);
+			if (rc < 0 || (size_t)rc >= sizeof(entry.full_name)) {
+				return -1;
+			}
+
+			rc = snprintf(entry.backend_name, sizeof(entry.backend_name), "proc");
+			if (rc < 0 || (size_t)rc >= sizeof(entry.backend_name)) {
+				return -1;
+			}
+
+			entry.type = proc_desc->type;
+			entry.dir = TAG_DIR_OUT;
+			entry.offset_byte = proc_offset;
+			entry.bit_index = 0U;
+
+			if (tag_table_add(&rt->tag_table, &entry) != 0) {
+				return -1;
+			}
+
+			proc_offset = (uint32_t)(proc_offset + (uint32_t)type_size);
+		}
+
+		if (proc_offset > 0U) {
+			rt->proc_storage = (uint8_t *)calloc(1U, proc_offset);
+			if (rt->proc_storage == NULL) {
+				return -1;
+			}
+			rt->proc_storage_size = proc_offset;
 		}
 	}
 
@@ -82,6 +168,12 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 			if (tag_table_add(&rt->tag_table, &entry) != 0) {
 				return -1;
 			}
+		}
+	}
+
+	if (rt->proc_storage != NULL) {
+		if (tag_api_bind_proc_storage(&rt->tag_table, rt->proc_storage, rt->proc_storage_size) != 0) {
+			return -1;
 		}
 	}
 

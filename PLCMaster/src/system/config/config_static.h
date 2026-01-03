@@ -7,6 +7,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "devices/device_desc.h"
+
 typedef struct BackendConfig
 {
     const char *name;
@@ -34,8 +36,10 @@ typedef struct DeviceConfig
 
 typedef struct ProcessVarDesc
 {
-    uint8_t placeholder; /* TODO: describe process variables */
-} ProcessVarDesc;
+	const char *name;
+	TagType_t type;
+	const char *comment;
+} ProcessVarDesc_t;
 
 typedef struct HmiTagDesc
 {
@@ -48,7 +52,7 @@ typedef struct SystemConfig
     size_t backend_count;
     const DeviceConfig_t *devices;
     size_t device_count;
-    const ProcessVarDesc *process_vars;
+	const ProcessVarDesc_t *process_vars;
     size_t process_var_count;
     const HmiTagDesc *hmi_tags;
     size_t hmi_tag_count;
