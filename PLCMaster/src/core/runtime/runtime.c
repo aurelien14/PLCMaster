@@ -39,3 +39,28 @@ void runtime_deinit(Runtime_t* rt)
 	rt->backend_count = 0U;
 	memset(rt->backend_array, 0, sizeof(rt->backend_array));
 }
+
+void runtime_backends_sync_outputs(Runtime_t* rt)
+{
+	size_t i;
+
+	if (rt == NULL || rt->backends == NULL)
+	{
+		return;
+	}
+
+	for (i = 0; i < rt->backend_count; ++i)
+	{
+		BackendDriver_t *drv = &rt->backends[i];
+		if (drv->ops != NULL && drv->ops->sync != NULL)
+		{
+			drv->ops->sync(drv);
+		}
+	}
+}
+
+void runtime_backends_process_nonrt(Runtime_t* rt)
+{
+	/* Placeholder for future non-RT backend work. */
+	(void)rt;
+}
