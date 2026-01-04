@@ -512,7 +512,7 @@ static int ethercat_start(BackendDriver_t *driver)
 	plat_atomic_store_bool(&impl->in_op, true);
 	plat_atomic_store_i32(&impl->fault_latched, 0);
 	plat_atomic_store_bool(&impl->rt_running, true);
-	if (plat_thread_create(&impl->rt_thread, ethercat_rt_thread, impl, "ec_rt") != 0)
+	if (plat_thread_create(&impl->rt_thread, PLAT_THREAD_NORMAL, NULL, ethercat_rt_thread, impl) != 0)
 	{
 		plat_atomic_store_bool(&impl->in_op, false);
 		plat_atomic_store_bool(&impl->rt_running, false);

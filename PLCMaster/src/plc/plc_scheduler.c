@@ -59,7 +59,7 @@ int plc_scheduler_start(PlcScheduler_t* s)
 		return -1;
 	}
 
-	if (plat_thread_create(&s->thread, plc_scheduler_thread, s, "plc_sched") != 0)
+	if (plat_thread_create(&s->thread, PLAT_THREAD_NORMAL, NULL, plc_scheduler_thread, s) != 0)
 	{
 		plat_atomic_store_bool(&s->running, false);
 		return -1;

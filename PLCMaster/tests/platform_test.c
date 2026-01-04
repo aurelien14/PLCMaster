@@ -5,6 +5,29 @@
 #include "core/platform/platform_thread.h"
 #include "core/platform/platform_time.h"
 
+typedef struct
+{
+	int stop;
+} rt_thread_ctx_t;
+
+static void *rt_thread_fn(void *arg)
+{
+	rt_thread_ctx_t *ctx = (rt_thread_ctx_t *)arg;
+	uint64_t start = plat_time_monotonic_ms();
+	printf("rt thread started\n");
+	while (!ctx->stop)
+	{
+		uint64_t now = plat_time_monotonic_ms();
+		if ((now - start) >= 1000)
+		{
+			printf("rt thread alive ms=%" PRIu64 "\n", now - start);
+			start = now;
+		}
+		plat_thread_yield();
+	}
+	return NULL;
+}
+
 int main(void)
 {
 	printf("PLAT_WINDOWS=%d PLAT_LINUX=%d PLAT_64BIT=%d\n", PLAT_WINDOWS, PLAT_LINUX, PLAT_64BIT);
@@ -29,6 +52,26 @@ int main(void)
 	int32_t add = plat_atomic_fetch_add_i32(&x, 3);
 
 	printf("atomic_i32 load=%" PRId32 " exchange_old=%" PRId32 " fetch_add_prev=%" PRId32 " final=%" PRId32 "\n", v, old, add, plat_atomic_load_i32(&x));
+
+	PlatThreadRtParams_t rt_params;
+	rt_params.priority_level = 1;
+	rt_params.affinity_cpu = 0;
+	rt_params.timer_res_ms = 1;
+	rt_params.stack_size = 0;
+
+	rt_thread_ctx_t ctx;
+	ctx.stop = 0;
+	plat_thread_t t;
+	if (plat_thread_create(&t, PLAT_THREAD_RT, &rt_params, rt_thread_fn, &ctx) == 0)
+	{
+		plat_thread_sleep_ms(1200);
+		ctx.stop = 1;
+		plat_thread_join(&t);
+	}
+	else
+	{
+		printf("Failed to start RT thread\n");
+	}
 
 	return 0;
 }
