@@ -9,13 +9,10 @@
 #include "core/platform/platform_thread.h"
 #include "core/platform/platform_atomic.h"
 #include "core/runtime/runtime.h"
-#include "core/tag/tag_api.h"
-#include "app/plc/plc_app.h"
+#include "app/app.h"
 #include "core/plc/plc_scheduler.h"
-#include "app/config/config_static.h"
 #include "system/builder/system_builder.h"
 #include "backends/ethercat/ec_backend.h"
-#include "app/plc/plc_tasks_demo.h"
 #ifdef DEV
 #include "app/demo/demo_tag_io.h"
 #endif /* DEV */
@@ -73,23 +70,12 @@ static void log_backend_debug(const Runtime_t *rt)
 int main(void)
 {
 	Runtime_t rt;
-	PlcApp_t app;
 	PlcScheduler_t sched;
-	PlcDemoBlinkCtx_t blink_ctx;
-	PlcDemoControlCtx_t control_ctx;
 	memset(&sched, 0, sizeof(sched));
-	memset(&app, 0, sizeof(app));
-	memset(&blink_ctx, 0, sizeof(blink_ctx));
-	memset(&control_ctx, 0, sizeof(control_ctx));
 	runtime_init(&rt);
 
-	const SystemConfig_t *cfg = get_static_config();
+	const SystemConfig_t *cfg = app_get_config();
 	int rc = system_build(&rt, cfg);
-
-	if (rc == 0)
-	{
-		rc = plc_app_bind(&app, &rt.tag_table);
-	}
 
 	if (rc == 0)
 	{
@@ -103,31 +89,7 @@ int main(void)
 
 	if (rc == 0)
 	{
-		PlcTask_t blink_task = {
-			.name = "blink",
-			.fn = plc_demo_task_blink,
-			.ctx = &blink_ctx,
-			.period_ms = 200,
-			.phase_ms = 0,
-			.last_run_ms = 0,
-		};
-		PlcTask_t control_task = {
-			.name = "control",
-			.fn = plc_demo_task_control,
-			.ctx = &control_ctx,
-			.period_ms = 1000,
-			.phase_ms = 0,
-			.last_run_ms = 0,
-		};
-
-		control_ctx.runtime = &rt;
-		control_ctx.temp_sp_id = tag_table_find_id(&rt.tag_table, "proc.temp_sp");
-
-		rc = plc_scheduler_add_task(&sched, &blink_task);
-		if (rc == 0)
-		{
-			rc = plc_scheduler_add_task(&sched, &control_task);
-		}
+		rc = app_register_plc_tasks(&sched, &rt);
 	}
 
 #ifdef DEV
@@ -162,8 +124,7 @@ int main(void)
 	{
 		printf("OK\n");
 		printf("Tag count: %u\n", rt.tag_table.count);
-		printf("ID CPU_IO.X15_Out0 = %u\n", app.io.X15_Out0);
-		printf("ID CPU_IO.X21_CPU_Pt1.Pt_Value = %u\n", app.io.X21_CPU_Pt1_Pt_Value);
+		app_log_bindings();
 	}
 	else
 	{
