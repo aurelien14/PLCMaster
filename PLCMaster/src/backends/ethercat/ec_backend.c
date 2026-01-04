@@ -118,12 +118,31 @@ static int ethercat_transition_safeop(EthercatDriver_t *impl)
 
 static int ethercat_transition_op(EthercatDriver_t *impl)
 {
-    int state;
+	int attempt;
 
-    impl->ctx.slavelist[0].state = EC_STATE_OPERATIONAL;
-    ecx_writestate(&impl->ctx, 0);
-    state = ecx_statecheck(&impl->ctx, 0, EC_STATE_OPERATIONAL, EC_TIMEOUTSTATE * 4);
-    return (state == EC_STATE_OPERATIONAL) ? 0 : -1;
+	impl->ctx.slavelist[0].state = EC_STATE_OPERATIONAL;
+	ecx_writestate(&impl->ctx, 0);
+
+	for (attempt = 0; attempt < 20; ++attempt)
+	{
+		int wkc;
+		int state;
+
+		ecx_send_processdata(&impl->ctx);
+		wkc = ecx_receive_processdata(&impl->ctx, EC_TIMEOUTRET);
+		state = ecx_statecheck(&impl->ctx, 0, EC_STATE_OPERATIONAL, EC_TIMEOUTSTATE);
+		if (state == EC_STATE_OPERATIONAL)
+		{
+			if (impl->expected_wkc != 0U && wkc < (int)impl->expected_wkc)
+			{
+				printf("[EC] Warning: WKC below expected during OP start (wkc=%d expected=%u)\n", wkc, (unsigned)impl->expected_wkc);
+			}
+			return 0;
+		}
+		plat_thread_sleep_ms(5);
+	}
+
+	return -1;
 }
 
 BackendDriver_t *ethercat_backend_create(const BackendConfig_t *cfg, size_t iomap_size, size_t max_devices, size_t backend_index)
@@ -160,9 +179,9 @@ BackendDriver_t *ethercat_backend_create(const BackendConfig_t *cfg, size_t ioma
         return NULL;
     }
 
-    (void)strncpy_s(impl->ifname, sizeof(impl->ifname) - 1U, cfg->ifname, sizeof(impl->ifname) - 1U);
-    impl->ifname[sizeof(impl->ifname) - 1U] = '\0';
+    (void)snprintf(impl->ifname, sizeof(impl->ifname), "%s", cfg->ifname);
     impl->cycle_time_us = cfg->cycle_time_us;
+    impl->rt_cycle_us = cfg->cycle_time_us;
     impl->dc_clock = cfg->dc_clock;
     impl->iomap_size = iomap_size;
     impl->perf_freq = 0U;
@@ -252,127 +271,284 @@ static int ethercat_bind_device(BackendDriver_t *driver, const DeviceConfig_t *c
 
 static int ethercat_finalize_mapping(BackendDriver_t *driver)
 {
-    EthercatDriver_t *impl = get_impl(driver);
-    int iomap_used;
-    size_t i;
+	EthercatDriver_t *impl = get_impl(driver);
+	int iomap_used;
+	size_t i;
 
-    if (impl == NULL || impl->iomap == NULL) {
-        return -1;
-    }
+	if (impl == NULL || impl->iomap == NULL)
+	{
+		return -1;
+	}
 
-    plat_thread_sleep_ms(1000);
+	plat_thread_sleep_ms(1000);
 
-    iomap_used = ecx_config_map_group(&impl->ctx, impl->iomap, 0);
-    if (iomap_used <= 0 || (size_t)iomap_used > impl->iomap_size) {
-        return -1;
-    }
+	iomap_used = ecx_config_map_group(&impl->ctx, impl->iomap, 0);
+	if (iomap_used <= 0 || (size_t)iomap_used > impl->iomap_size)
+	{
+		return -1;
+	}
 
-    impl->expected_wkc = (uint16_t)((impl->ctx.grouplist[0].outputsWKC * 2) + impl->ctx.grouplist[0].inputsWKC);
+	impl->expected_wkc = (uint16_t)((impl->ctx.grouplist[0].outputsWKC * 2) + impl->ctx.grouplist[0].inputsWKC);
 
-    for (i = 0; i < impl->device_count; ++i) {
-        EthercatDevice_t *dev = &impl->devices[i];
-        ec_slavet *sl;
-        uint32_t expected_vendor;
-        uint32_t expected_product;
+	for (i = 0; i < impl->device_count; ++i)
+	{
+		EthercatDevice_t *dev = &impl->devices[i];
+		ec_slavet *sl;
+		uint32_t expected_vendor;
+		uint32_t expected_product;
 
-        if (dev->slave_index == 0 || dev->slave_index > impl->ctx.slavecount) {
-            return -1;
-        }
+		if (dev->slave_index == 0 || dev->slave_index > impl->ctx.slavecount)
+		{
+			goto error;
+		}
 
-        sl = &impl->ctx.slavelist[dev->slave_index];
-        dev->soem_inputs = sl->inputs;
-        dev->soem_outputs = sl->outputs;
+		sl = &impl->ctx.slavelist[dev->slave_index];
+		dev->soem_inputs = sl->inputs;
+		dev->soem_outputs = sl->outputs;
 
-        expected_vendor = dev->cfg->expected_identity.vendor_id != 0 ? dev->cfg->expected_identity.vendor_id : dev->desc->vendor_id;
-        expected_product = dev->cfg->expected_identity.product_code != 0 ? dev->cfg->expected_identity.product_code : dev->desc->product_code;
-        if (expected_vendor != 0 && sl->eep_man != expected_vendor) {
-            return -1;
-        }
-        if (expected_product != 0 && sl->eep_id != expected_product) {
-            return -1;
-        }
+		expected_vendor = dev->cfg->expected_identity.vendor_id != 0 ? dev->cfg->expected_identity.vendor_id : dev->desc->vendor_id;
+		expected_product = dev->cfg->expected_identity.product_code != 0 ? dev->cfg->expected_identity.product_code : dev->desc->product_code;
+		if (expected_vendor != 0 && sl->eep_man != expected_vendor)
+		{
+			goto error;
+		}
+		if (expected_product != 0 && sl->eep_id != expected_product)
+		{
+			goto error;
+		}
 
-        if (sl->Ibytes < dev->desc->tx_bytes || sl->Obytes < dev->desc->rx_bytes) {
-            return -1;
-        }
+		if (sl->Ibytes < dev->desc->tx_bytes || sl->Obytes < dev->desc->rx_bytes)
+		{
+			goto error;
+		}
 
-        dev->in_size = dev->desc->tx_bytes;
-        dev->out_size = dev->desc->rx_bytes;
-        dev->in_buffers[0] = (uint8_t *)calloc(1, dev->in_size);
-        dev->in_buffers[1] = (uint8_t *)calloc(1, dev->in_size);
-        dev->out_buffers[0] = (uint8_t *)calloc(1, dev->out_size);
-        dev->out_buffers[1] = (uint8_t *)calloc(1, dev->out_size);
-        if (dev->in_buffers[0] == NULL || dev->in_buffers[1] == NULL || dev->out_buffers[0] == NULL || dev->out_buffers[1] == NULL) {
-            return -1;
-        }
-    }
+		dev->in_size = dev->desc->tx_bytes;
+		dev->out_size = dev->desc->rx_bytes;
+		dev->in_buffers[0] = (uint8_t *)calloc(1, dev->in_size);
+		dev->in_buffers[1] = (uint8_t *)calloc(1, dev->in_size);
+		dev->out_buffers[0] = (uint8_t *)calloc(1, dev->out_size);
+		dev->out_buffers[1] = (uint8_t *)calloc(1, dev->out_size);
+		if (dev->in_buffers[0] == NULL || dev->in_buffers[1] == NULL || dev->out_buffers[0] == NULL || dev->out_buffers[1] == NULL)
+		{
+			goto error;
+		}
+	}
 
-    plat_atomic_store_i32(&impl->active_in_buffer_idx, 0);
-    plat_atomic_store_i32(&impl->active_out_buffer_idx, 0);
-    plat_atomic_store_i32(&impl->rt_out_buffer_idx, 0);
+	plat_atomic_store_i32(&impl->active_in_buffer_idx, 0);
+	plat_atomic_store_i32(&impl->active_out_buffer_idx, 0);
+	plat_atomic_store_i32(&impl->rt_out_buffer_idx, 0);
+	plat_atomic_store_i32(&impl->last_wkc, 0);
+	plat_atomic_store_i32(&impl->fault_latched, 0);
+	plat_atomic_store_i32(&impl->ec_state, EC_STATE_NONE);
+	impl->rt_cycle_us = impl->cycle_time_us;
 
-    if (impl->dc_clock) {
-        ecx_configdc(&impl->ctx);
-    }
+	if (impl->dc_clock)
+	{
+		ecx_configdc(&impl->ctx);
+	}
 
-    if (ethercat_transition_safeop(impl) != 0) {
-        return -1;
-    }
+	if (ethercat_transition_safeop(impl) != 0)
+	{
+		goto error;
+	}
 
-    return 0;
+	plat_atomic_store_i32(&impl->ec_state, EC_STATE_SAFE_OP);
+	return 0;
+
+error:
+	for (i = 0; i < impl->device_count; ++i)
+	{
+		free_device_buffers(&impl->devices[i]);
+	}
+	return -1;
+}
+
+static void ethercat_copy_out_to_iomap(EthercatDriver_t *impl, int out_idx)
+{
+	size_t i;
+
+	for (i = 0; i < impl->device_count; ++i)
+	{
+		EthercatDevice_t *dev = &impl->devices[i];
+		if (dev->soem_outputs != NULL && dev->out_buffers[out_idx] != NULL && dev->out_size > 0U)
+		{
+			memcpy(dev->soem_outputs, dev->out_buffers[out_idx], dev->out_size);
+		}
+	}
+}
+
+static void ethercat_copy_iomap_to_in(EthercatDriver_t *impl, int next_in_idx)
+{
+	size_t i;
+
+	for (i = 0; i < impl->device_count; ++i)
+	{
+		EthercatDevice_t *dev = &impl->devices[i];
+		if (dev->soem_inputs != NULL && dev->in_buffers[next_in_idx] != NULL && dev->in_size > 0U)
+		{
+			memcpy(dev->in_buffers[next_in_idx], dev->soem_inputs, dev->in_size);
+		}
+	}
+}
+
+static void *ethercat_rt_thread(void *arg)
+{
+	EthercatDriver_t *impl = (EthercatDriver_t *)arg;
+	int expected_wkc = (int)impl->expected_wkc;
+	int error_streak = 0;
+	uint64_t period_ns = (uint64_t)impl->rt_cycle_us * 1000ULL;
+	uint64_t next_deadline = plat_time_monotonic_ns() + period_ns;
+
+	plat_atomic_store_bool(&impl->rt_running, true);
+	printf("[EC] RT thread start period=%u us expected WKC=%u\n", impl->rt_cycle_us, (unsigned)impl->expected_wkc);
+
+	while (plat_atomic_load_bool(&impl->rt_running))
+	{
+		int out_idx;
+		int cur_in;
+		int next_in;
+		int wkc;
+		uint64_t now_ns;
+		int64_t sleep_ns;
+
+		out_idx = plat_atomic_load_i32(&impl->rt_out_buffer_idx);
+		if (out_idx < 0 || out_idx > 1)
+		{
+			out_idx = 0;
+			plat_atomic_store_i32(&impl->rt_out_buffer_idx, 0);
+		}
+
+		ethercat_copy_out_to_iomap(impl, out_idx);
+
+		ecx_send_processdata(&impl->ctx);
+		wkc = ecx_receive_processdata(&impl->ctx, EC_TIMEOUTRET);
+		plat_atomic_store_i32(&impl->last_wkc, wkc);
+
+		if (expected_wkc > 0 && wkc < expected_wkc)
+		{
+			++error_streak;
+			if (error_streak > 50)
+			{
+				if (plat_atomic_load_i32(&impl->fault_latched) == 0)
+				{
+					printf("[EC] Fault latched: WKC below expected (%d < %d)\n", wkc, expected_wkc);
+				}
+				plat_atomic_store_i32(&impl->fault_latched, 1);
+				plat_atomic_store_bool(&impl->in_op, false);
+			}
+		}
+		else
+		{
+			error_streak = 0;
+		}
+
+		cur_in = plat_atomic_load_i32(&impl->active_in_buffer_idx);
+		if (cur_in < 0 || cur_in > 1)
+		{
+			cur_in = 0;
+			plat_atomic_store_i32(&impl->active_in_buffer_idx, 0);
+		}
+		next_in = 1 - cur_in;
+
+		ethercat_copy_iomap_to_in(impl, next_in);
+		plat_atomic_store_i32(&impl->active_in_buffer_idx, next_in);
+
+		now_ns = plat_time_monotonic_ns();
+		sleep_ns = (int64_t)(next_deadline - now_ns);
+		if (sleep_ns > 1000000LL)
+		{
+			plat_thread_sleep_ms((uint32_t)(sleep_ns / 1000000LL));
+		}
+		else if (sleep_ns > 0)
+		{
+			plat_thread_yield();
+		}
+
+		next_deadline += period_ns;
+		now_ns = plat_time_monotonic_ns();
+		if (now_ns > next_deadline + period_ns)
+		{
+			next_deadline = now_ns + period_ns;
+		}
+	}
+
+	plat_atomic_store_bool(&impl->rt_running, false);
+	return NULL;
 }
 
 static int ethercat_start(BackendDriver_t *driver)
 {
-    EthercatDriver_t *impl = get_impl(driver);
-    int i;
-    int wkc = 0;
+	EthercatDriver_t *impl = get_impl(driver);
+	int i;
+	int wkc = 0;
 
-    if (impl == NULL || impl->iomap == NULL) {
-        return -1;
-    }
+	if (impl == NULL || impl->iomap == NULL)
+	{
+		return -1;
+	}
 
-    memset(impl->iomap, 0, impl->iomap_size);
+	memset(impl->iomap, 0, impl->iomap_size);
 
-    for (i = 0; i < 3; ++i) {
-        ecx_send_processdata(&impl->ctx);
-        wkc = ecx_receive_processdata(&impl->ctx, (int)impl->cycle_time_us);
-    }
+	for (i = 0; i < 3; ++i)
+	{
+		ecx_send_processdata(&impl->ctx);
+		wkc = ecx_receive_processdata(&impl->ctx, EC_TIMEOUTRET);
+	}
+	plat_atomic_store_i32(&impl->last_wkc, wkc);
 
-    plat_thread_sleep_ms(2);
+	plat_thread_sleep_ms(2);
 
-    if (ethercat_transition_op(impl) != 0) {
-        return -1;
-    }
+	if (ethercat_transition_op(impl) != 0)
+	{
+		return -1;
+	}
 
-    if (wkc < (int)impl->expected_wkc) {
-        printf("Warning: WKC %d below expected %u during startup\n", wkc, (unsigned)impl->expected_wkc);
-    }
+	plat_atomic_store_i32(&impl->ec_state, EC_STATE_OPERATIONAL);
+	if (wkc < (int)impl->expected_wkc)
+	{
+		printf("Warning: WKC %d below expected %u during startup\n", wkc, (unsigned)impl->expected_wkc);
+	}
 
-    plat_atomic_store_bool(&impl->in_op, true);
-    /* TODO Phase B: start EtherCAT loop thread + watchdog */
-    return 0;
+	plat_atomic_store_bool(&impl->in_op, true);
+	plat_atomic_store_i32(&impl->fault_latched, 0);
+	plat_atomic_store_bool(&impl->rt_running, true);
+	if (plat_thread_create(&impl->rt_thread, ethercat_rt_thread, impl, "ec_rt") != 0)
+	{
+		plat_atomic_store_bool(&impl->in_op, false);
+		plat_atomic_store_bool(&impl->rt_running, false);
+		return -1;
+	}
+	return 0;
 }
 
 static int ethercat_stop(BackendDriver_t *driver)
 {
-    EthercatDriver_t *impl = get_impl(driver);
+	EthercatDriver_t *impl = get_impl(driver);
 
-    if (impl == NULL) {
-        return -1;
-    }
+	if (impl == NULL)
+	{
+		return -1;
+	}
 
-    impl->ctx.slavelist[0].state = EC_STATE_SAFE_OP;
-    ecx_writestate(&impl->ctx, 0);
-    (void)ecx_statecheck(&impl->ctx, 0, EC_STATE_SAFE_OP, EC_TIMEOUTSTATE * 4);
-    plat_atomic_store_bool(&impl->in_op, false);
-    return 0;
+	if (plat_atomic_load_bool(&impl->rt_running))
+	{
+		plat_atomic_store_bool(&impl->rt_running, false);
+		plat_thread_join(&impl->rt_thread);
+	}
+
+	impl->ctx.slavelist[0].state = EC_STATE_SAFE_OP;
+	ecx_writestate(&impl->ctx, 0);
+	(void)ecx_statecheck(&impl->ctx, 0, EC_STATE_SAFE_OP, EC_TIMEOUTSTATE * 4);
+	plat_atomic_store_bool(&impl->in_op, false);
+	plat_atomic_store_i32(&impl->ec_state, EC_STATE_SAFE_OP);
+	return 0;
 }
 
 static int ethercat_process(BackendDriver_t *driver)
 {
-    /* Phase A: no dedicated thread. Optional single cycle helper. */
-    return ethercat_cycle_once(driver);
+	/* Phase B: realtime thread handles process data. TODO: mailbox/CoE service thread. */
+	PLAT_UNUSED(driver);
+	return 0;
 }
 
 static void ethercat_sync_buffers(BackendDriver_t *driver)
@@ -469,49 +645,9 @@ static uint8_t *ethercat_get_output_data(BackendDriver_t *driver, const DeviceCo
 
 int ethercat_cycle_once(BackendDriver_t *driver)
 {
-    EthercatDriver_t *impl = get_impl(driver);
-    int wkc = -1;
-    int out_idx;
-    int cur_in;
-    int next_in;
-    size_t i;
-
-    if (impl == NULL) {
-        return -1;
-    }
-
-    out_idx = plat_atomic_load_i32(&impl->rt_out_buffer_idx);
-    if (out_idx < 0 || out_idx > 1) {
-        out_idx = 0;
-        plat_atomic_store_i32(&impl->rt_out_buffer_idx, 0);
-    }
-
-    for (i = 0; i < impl->device_count; ++i) {
-        EthercatDevice_t *dev = &impl->devices[i];
-        if (dev->soem_outputs != NULL && dev->out_buffers[out_idx] != NULL && dev->out_size > 0U) {
-            memcpy(dev->soem_outputs, dev->out_buffers[out_idx], dev->out_size);
-        }
-    }
-
-    ecx_send_processdata(&impl->ctx);
-    wkc = ecx_receive_processdata(&impl->ctx, (int)impl->cycle_time_us);
-
-    cur_in = plat_atomic_load_i32(&impl->active_in_buffer_idx);
-    if (cur_in < 0 || cur_in > 1) {
-        cur_in = 0;
-        plat_atomic_store_i32(&impl->active_in_buffer_idx, 0);
-    }
-    next_in = 1 - cur_in;
-
-    for (i = 0; i < impl->device_count; ++i) {
-        EthercatDevice_t *dev = &impl->devices[i];
-        if (dev->soem_inputs != NULL && dev->in_buffers[next_in] != NULL && dev->in_size > 0U) {
-            memcpy(dev->in_buffers[next_in], dev->soem_inputs, dev->in_size);
-        }
-    }
-
-    plat_atomic_store_i32(&impl->active_in_buffer_idx, next_in);
-    return wkc;
+	/* Legacy helper retained for compatibility; RT thread now handles IO. */
+	PLAT_UNUSED(driver);
+	return 0;
 }
 
 static BackendDriverOps_t g_ec_ops = {
