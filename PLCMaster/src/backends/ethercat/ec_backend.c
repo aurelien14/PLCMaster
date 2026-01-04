@@ -9,6 +9,7 @@
 
 #include "core/platform/platform_thread.h"
 #include "core/platform/platform_time.h"
+#include "ec_soem_lifecycle.h"
 
 #define EC_MAX_IFNAME_LEN 63
 #define EC_DEFAULT_PERIOD_NS 1000000ULL
@@ -72,7 +73,7 @@ static void free_driver_resources(EthercatDriver_t *impl)
         return;
     }
 
-    ecx_close(&impl->ctx);
+	ec_soem_close(&impl->ctx);
 
     free(impl->iomap);
     impl->iomap = NULL;
@@ -87,65 +88,6 @@ static void free_driver_resources(EthercatDriver_t *impl)
         impl->device_capacity = 0U;
         impl->device_count = 0U;
     }
-}
-
-void print_available_adapters(void)
-{
-    ec_adaptert *adapter_list = ec_find_adapters();
-    ec_adaptert *cur = adapter_list;
-
-    printf("Available Ethernet adapters:\n");
-    if (cur == NULL) {
-        printf("  (none found)\n");
-    }
-
-    while (cur != NULL) {
-        const char *name = (cur->name != NULL) ? cur->name : "(null)";
-        const char *desc = (cur->desc != NULL) ? cur->desc : "";
-        printf("  - %s : %s\n", name, desc);
-        cur = cur->next;
-    }
-
-    ec_free_adapters(adapter_list);
-}
-
-static int ethercat_transition_safeop(EthercatDriver_t *impl)
-{
-    int state;
-
-    impl->ctx.slavelist[0].state = EC_STATE_SAFE_OP;
-    ecx_writestate(&impl->ctx, 0);
-    state = ecx_statecheck(&impl->ctx, 0, EC_STATE_SAFE_OP, EC_TIMEOUTSTATE * 4);
-    return (state == EC_STATE_SAFE_OP) ? 0 : -1;
-}
-
-static int ethercat_transition_op(EthercatDriver_t *impl)
-{
-	int attempt;
-
-	impl->ctx.slavelist[0].state = EC_STATE_OPERATIONAL;
-	ecx_writestate(&impl->ctx, 0);
-
-	for (attempt = 0; attempt < 20; ++attempt)
-	{
-		int wkc;
-		int state;
-
-		ecx_send_processdata(&impl->ctx);
-		wkc = ecx_receive_processdata(&impl->ctx, EC_TIMEOUTRET);
-		state = ecx_statecheck(&impl->ctx, 0, EC_STATE_OPERATIONAL, EC_TIMEOUTSTATE);
-		if (state == EC_STATE_OPERATIONAL)
-		{
-			if (impl->expected_wkc != 0U && wkc < (int)impl->expected_wkc)
-			{
-				printf("[EC] Warning: WKC below expected during OP start (wkc=%d expected=%u)\n", wkc, (unsigned)impl->expected_wkc);
-			}
-			return 0;
-		}
-		plat_thread_sleep_ms(5);
-	}
-
-	return -1;
 }
 
 BackendDriver_t *ethercat_backend_create(const BackendConfig_t *cfg, size_t iomap_size, size_t max_devices, size_t backend_index)
@@ -219,12 +161,12 @@ BackendDriver_t *ethercat_backend_create(const BackendConfig_t *cfg, size_t ioma
 	impl->perf_freq = 0U;
 	plat_atomic_store_bool(&impl->in_op, false);
 
-    if (ecx_init(&impl->ctx, impl->ifname) == 0) {
-        print_available_adapters();
-        free_driver_resources(impl);
-        free(impl);
-        return NULL;
-    }
+	if (ec_soem_context_init(&impl->ctx, impl->ifname) != 0)
+	{
+		free_driver_resources(impl);
+		free(impl);
+		return NULL;
+	}
 
     return &impl->base;
 }
@@ -252,7 +194,7 @@ static int ethercat_init(BackendDriver_t *driver)
 
     impl->perf_freq = plat_time_perf_freq();
 
-    slave_count = ecx_config_init(&impl->ctx);
+	slave_count = ec_soem_scan_slaves(&impl->ctx);
     if (slave_count <= 0) {
         return -1;
     }
@@ -304,7 +246,6 @@ static int ethercat_bind_device(BackendDriver_t *driver, const DeviceConfig_t *c
 static int ethercat_finalize_mapping(BackendDriver_t *driver)
 {
 	EthercatDriver_t *impl = get_impl(driver);
-	int iomap_used;
 	size_t i;
 
 	if (impl == NULL || impl->iomap == NULL)
@@ -314,13 +255,10 @@ static int ethercat_finalize_mapping(BackendDriver_t *driver)
 
 	plat_thread_sleep_ms(1000);
 
-	iomap_used = ecx_config_map_group(&impl->ctx, impl->iomap, 0);
-	if (iomap_used <= 0 || (size_t)iomap_used > impl->iomap_size)
+	if (ec_soem_configure_iomap_group0(&impl->ctx, impl->iomap, impl->iomap_size, &impl->expected_wkc) <= 0)
 	{
 		return -1;
 	}
-
-	impl->expected_wkc = (uint16_t)((impl->ctx.grouplist[0].outputsWKC * 2) + impl->ctx.grouplist[0].inputsWKC);
 
 	for (i = 0; i < impl->device_count; ++i)
 	{
@@ -577,7 +515,7 @@ static int ethercat_start(BackendDriver_t *driver)
 
 	plat_thread_sleep_ms(2);
 
-	if (ethercat_transition_op(impl) != 0)
+	if (ec_soem_request_op(&impl->ctx, impl->expected_wkc) != 0)
 	{
 		return -1;
 	}
@@ -625,9 +563,12 @@ static int ethercat_stop(BackendDriver_t *driver)
 	ecx_send_processdata(&impl->ctx);
 	(void)ecx_receive_processdata(&impl->ctx, EC_TIMEOUTRET);
 
-	impl->ctx.slavelist[0].state = EC_STATE_SAFE_OP;
-	ecx_writestate(&impl->ctx, 0);
-	(void)ecx_statecheck(&impl->ctx, 0, EC_STATE_SAFE_OP, EC_TIMEOUTSTATE * 4);
+	if (ec_soem_request_safe_op(&impl->ctx) != 0)
+	{
+		plat_atomic_store_bool(&impl->in_op, false);
+		plat_atomic_store_i32(&impl->ec_state, EC_STATE_NONE);
+		return -1;
+	}
 	plat_atomic_store_bool(&impl->in_op, false);
 	plat_atomic_store_i32(&impl->ec_state, EC_STATE_SAFE_OP);
 	return 0;
