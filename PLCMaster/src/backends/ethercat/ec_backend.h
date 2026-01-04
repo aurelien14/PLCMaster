@@ -8,24 +8,24 @@
 #include <stdint.h>
 
 #include "core/platform/platform_atomic.h"
-#include "ethercat_main.h"
+#include <soem/soem.h>
 
 typedef struct EcBackend
 {
-\tecx_contextt ctx;
-\tchar ifname[64];
-\tbool dc_clock;
-\tuint32_t cycle_time_us;
-\tuint8_t *iomap;
-\tsize_t iomap_size;
-\tuint8_t *in_buf[2];
-\tsize_t in_size;
-\tuint8_t *out_buf[2];
-\tsize_t out_size;
-\tplat_atomic_i32_t active_in_idx;
-\tplat_atomic_i32_t active_out_idx;
-\tplat_atomic_i32_t build_out_idx;
-\tplat_atomic_bool_t out_dirty;
+    ecx_contextt ctx;
+    char ifname[64];
+    bool dc_clock;
+    uint32_t cycle_time_us;
+    uint8_t *iomap;
+    size_t iomap_size;
+    uint8_t *in_buf[2];
+    size_t in_size;
+    uint8_t *out_buf[2];
+    size_t out_size;
+    plat_atomic_i32_t active_in_idx;
+    plat_atomic_i32_t active_out_idx;
+    plat_atomic_i32_t build_out_idx;
+    plat_atomic_bool_t out_dirty;
 } EcBackend_t;
 
 int ec_backend_init(EcBackend_t *ec, const char *ifname, size_t iomap_size, bool dc_clock, uint32_t cycle_time_us);
