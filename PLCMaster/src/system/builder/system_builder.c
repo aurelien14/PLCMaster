@@ -5,7 +5,7 @@
 #include "core/tag/tag_api.h"
 #include "devices/registry/device_registry.h"
 #include "backends/backend_iface.h"
-#include "backends/ethercat/ec_backend.h"
+#include "backends/registry/backend_registry.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -21,11 +21,8 @@ static void cleanup_backends(Runtime_t *rt)
 
 	for (idx = 0; idx < rt->backend_count && idx < MAX_BACKENDS; ++idx) {
 		BackendDriver_t *drv = &rt->backend_array[idx];
-		if (drv->type == BACKEND_TYPE_ETHERCAT && drv->impl != NULL) {
-			if (drv->ops != NULL && drv->ops->stop != NULL) {
-				(void)drv->ops->stop(drv);
-			}
-			ethercat_backend_destroy(drv);
+		if (drv->impl != NULL) {
+			backend_destroy(drv);
 		}
 		memset(drv, 0, sizeof(*drv));
 	}
@@ -96,7 +93,6 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 
 		drv = &rt->backend_array[rt->backend_count];
 		memset(drv, 0, sizeof(*drv));
-		drv->type = BACKEND_TYPE_ETHERCAT;
 		if (snprintf(drv->name, sizeof(drv->name), "%s", backend_cfg->name) < 0) {
 			goto cleanup;
 		}
@@ -117,7 +113,7 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 			iomap_size = 256U;
 		}
 
-		drv = ethercat_backend_create(backend_cfg, iomap_size, config->device_count, backend_index);
+		drv = backend_create(backend_cfg, backend_index, config->device_count, iomap_size);
 		if (drv == NULL) {
 			goto cleanup;
 		}
