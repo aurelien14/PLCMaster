@@ -149,7 +149,6 @@
     <ClCompile Include="src\plc\plc_app.c" />
     <ClCompile Include="src\system\builder\system_builder.c" />
     <ClCompile Include="src\system\config\config_static.c" />
-    <ClCompile Include="tests\platform_test.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\backends\backend_iface.h" />
