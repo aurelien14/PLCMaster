@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include "backends/backend_iface.h"
+#include "core/platform/platform_thread.h"
 #include "devices/device_desc.h"
 
 typedef struct BackendConfig
@@ -17,6 +18,12 @@ typedef struct BackendConfig
     const char *ifname;     /* TODO: set interface name */
     uint32_t cycle_time_us;
     bool dc_clock;
+	uint32_t period_ns;
+	uint32_t spin_threshold_ns;
+	PlatThreadPriority_t rt_priority;
+	int rt_affinity_cpu;   /* -1 = none */
+	int rt_reserved_cpu;   /* shared default for EtherCAT RT affinity */
+	uint32_t rt_timer_resolution_ms;
 } BackendConfig_t;
 
 typedef struct DeviceConfig

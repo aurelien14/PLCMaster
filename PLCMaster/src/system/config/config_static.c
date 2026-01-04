@@ -9,6 +9,12 @@ static const BackendConfig_t kBackendConfigs[] = {
         .ifname = "TODO_IFNAME",
         .cycle_time_us = 1000,
         .dc_clock = true,
+		.period_ns = 0,
+		.spin_threshold_ns = 0,
+		.rt_priority = PLAT_THREAD_PRIORITY_HIGH,
+		.rt_affinity_cpu = -1,
+		.rt_reserved_cpu = -1,
+		.rt_timer_resolution_ms = 1,
     },
 };
 
