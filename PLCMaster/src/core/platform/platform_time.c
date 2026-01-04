@@ -1,6 +1,9 @@
 #include "platform_time.h"
 
 #if PLAT_WINDOWS
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN /* Exclude some conflicting definitions in windows header */
+#endif
 #include <windows.h>
 #elif PLAT_LINUX
 #include <time.h>
