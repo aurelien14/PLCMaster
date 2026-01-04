@@ -118,6 +118,59 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 		rt->proc_store.count = config->process_var_count;
 	}
 
+	if (config->hmi_tag_count > 0 && config->hmi_tags == NULL) {
+		return -1;
+	}
+
+	if (config->hmi_tags != NULL) {
+		size_t hmi_index;
+		for (hmi_index = 0; hmi_index < config->hmi_tag_count; ++hmi_index) {
+			const HmiTagDesc_t *hmi_desc = &config->hmi_tags[hmi_index];
+			TagId_t target_id;
+			const TagEntry_t *target_entry;
+			TagEntry_t entry;
+			int rc;
+
+			if (hmi_desc->alias_of == NULL) {
+				return -1;
+			}
+
+			target_id = tag_table_find_id(&rt->tag_table, hmi_desc->alias_of);
+			if (target_id == 0) {
+				return -1;
+			}
+
+			target_entry = tag_table_get(&rt->tag_table, target_id);
+			if (target_entry == NULL) {
+				return -1;
+			}
+
+			memset(&entry, 0, sizeof(entry));
+			rc = snprintf(entry.full_name, sizeof(entry.full_name), "hmi.%s", hmi_desc->name);
+			if (rc < 0 || (size_t)rc >= sizeof(entry.full_name)) {
+				return -1;
+			}
+
+			rc = snprintf(entry.backend_name, sizeof(entry.backend_name), "hmi");
+			if (rc < 0 || (size_t)rc >= sizeof(entry.backend_name)) {
+				return -1;
+			}
+
+			entry.type = target_entry->type;
+			entry.dir = target_entry->dir;
+			entry.offset_byte = 0U;
+			entry.bit_index = 0U;
+			entry.kind = TAGK_HMI_ALIAS;
+			entry.proc_index = 0U;
+			entry.alias_target = target_id;
+			entry.hmi_access = (uint8_t)hmi_desc->access;
+
+			if (tag_table_add(&rt->tag_table, &entry) != 0) {
+				return -1;
+			}
+		}
+	}
+
 	for (device_index = 0; device_index < config->device_count; ++device_index) {
 		const DeviceConfig_t *device_cfg = &config->devices[device_index];
 		const DeviceDesc_t *desc = device_registry_find(device_cfg->model);

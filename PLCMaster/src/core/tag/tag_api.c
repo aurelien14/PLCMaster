@@ -4,11 +4,15 @@
 
 #include <stddef.h>
 
-static int get_proc_value(Runtime_t* rt, TagId_t id, TagType_t expected_type, const TagEntry_t **out_entry, ProcValue_t **out_value)
+static int get_resolved_value(Runtime_t* rt, TagId_t id, TagType_t expected_type, int for_write, int depth, const TagEntry_t **out_entry, ProcValue_t **out_value)
 {
 	const TagEntry_t *entry;
 
 	if (rt == NULL || out_entry == NULL || out_value == NULL) {
+		return -1;
+	}
+
+	if (depth > 4) {
 		return -1;
 	}
 
@@ -17,11 +21,21 @@ static int get_proc_value(Runtime_t* rt, TagId_t id, TagType_t expected_type, co
 		return -1;
 	}
 
-	if (entry->kind != TAGK_PROC) {
+	if (entry->type != expected_type) {
 		return -1;
 	}
 
-	if (entry->type != expected_type) {
+	if (entry->kind == TAGK_HMI_ALIAS) {
+		if (for_write && entry->hmi_access == 0U) {
+			return -1;
+		}
+		if (entry->alias_target == 0U) {
+			return -1;
+		}
+		return get_resolved_value(rt, entry->alias_target, expected_type, for_write, depth + 1, out_entry, out_value);
+	}
+
+	if (entry->kind != TAGK_PROC) {
 		return -1;
 	}
 
@@ -46,7 +60,7 @@ int tag_read_bool(Runtime_t* rt, TagId_t id, bool *out)
 		return -1;
 	}
 
-	if (get_proc_value(rt, id, TAG_T_BOOL, &entry, &v) != 0) {
+	if (get_resolved_value(rt, id, TAG_T_BOOL, 0, 0, &entry, &v) != 0) {
 		return -1;
 	}
 
@@ -60,7 +74,7 @@ int tag_write_bool(Runtime_t* rt, TagId_t id, bool value)
 	const TagEntry_t *entry;
 	ProcValue_t *v;
 
-	if (get_proc_value(rt, id, TAG_T_BOOL, &entry, &v) != 0) {
+	if (get_resolved_value(rt, id, TAG_T_BOOL, 1, 0, &entry, &v) != 0) {
 		return -1;
 	}
 
@@ -78,7 +92,7 @@ int tag_read_u8(Runtime_t* rt, TagId_t id, uint8_t *out)
 		return -1;
 	}
 
-	if (get_proc_value(rt, id, TAG_T_U8, &entry, &v) != 0) {
+	if (get_resolved_value(rt, id, TAG_T_U8, 0, 0, &entry, &v) != 0) {
 		return -1;
 	}
 
@@ -92,7 +106,7 @@ int tag_write_u8(Runtime_t* rt, TagId_t id, uint8_t value)
 	const TagEntry_t *entry;
 	ProcValue_t *v;
 
-	if (get_proc_value(rt, id, TAG_T_U8, &entry, &v) != 0) {
+	if (get_resolved_value(rt, id, TAG_T_U8, 1, 0, &entry, &v) != 0) {
 		return -1;
 	}
 
@@ -110,7 +124,7 @@ int tag_read_u16(Runtime_t* rt, TagId_t id, uint16_t *out)
 		return -1;
 	}
 
-	if (get_proc_value(rt, id, TAG_T_U16, &entry, &v) != 0) {
+	if (get_resolved_value(rt, id, TAG_T_U16, 0, 0, &entry, &v) != 0) {
 		return -1;
 	}
 
@@ -124,7 +138,7 @@ int tag_write_u16(Runtime_t* rt, TagId_t id, uint16_t value)
 	const TagEntry_t *entry;
 	ProcValue_t *v;
 
-	if (get_proc_value(rt, id, TAG_T_U16, &entry, &v) != 0) {
+	if (get_resolved_value(rt, id, TAG_T_U16, 1, 0, &entry, &v) != 0) {
 		return -1;
 	}
 
@@ -142,7 +156,7 @@ int tag_read_u32(Runtime_t* rt, TagId_t id, uint32_t *out)
 		return -1;
 	}
 
-	if (get_proc_value(rt, id, TAG_T_U32, &entry, &v) != 0) {
+	if (get_resolved_value(rt, id, TAG_T_U32, 0, 0, &entry, &v) != 0) {
 		return -1;
 	}
 
@@ -156,7 +170,7 @@ int tag_write_u32(Runtime_t* rt, TagId_t id, uint32_t value)
 	const TagEntry_t *entry;
 	ProcValue_t *v;
 
-	if (get_proc_value(rt, id, TAG_T_U32, &entry, &v) != 0) {
+	if (get_resolved_value(rt, id, TAG_T_U32, 1, 0, &entry, &v) != 0) {
 		return -1;
 	}
 
@@ -174,7 +188,7 @@ int tag_read_real(Runtime_t* rt, TagId_t id, float *out)
 		return -1;
 	}
 
-	if (get_proc_value(rt, id, TAG_T_REAL, &entry, &v) != 0) {
+	if (get_resolved_value(rt, id, TAG_T_REAL, 0, 0, &entry, &v) != 0) {
 		return -1;
 	}
 
@@ -188,7 +202,7 @@ int tag_write_real(Runtime_t* rt, TagId_t id, float value)
 	const TagEntry_t *entry;
 	ProcValue_t *v;
 
-	if (get_proc_value(rt, id, TAG_T_REAL, &entry, &v) != 0) {
+	if (get_resolved_value(rt, id, TAG_T_REAL, 1, 0, &entry, &v) != 0) {
 		return -1;
 	}
 

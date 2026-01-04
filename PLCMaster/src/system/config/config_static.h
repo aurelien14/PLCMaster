@@ -55,7 +55,7 @@ typedef struct HmiTagDesc
     const char *name;     /* ex: "temp_setpoint" */
     const char *alias_of; /* ex: "proc.temp_sp" */
     HmiAccess_t access;   /* RO/RW */
-} HmiTagDesc;
+} HmiTagDesc_t;
 
 typedef struct SystemConfig
 {
@@ -65,7 +65,7 @@ typedef struct SystemConfig
     size_t device_count;
 	const ProcessVarDesc_t *process_vars;
     size_t process_var_count;
-    const HmiTagDesc *hmi_tags;
+    const HmiTagDesc_t *hmi_tags;
     size_t hmi_tag_count;
 } SystemConfig_t;
 

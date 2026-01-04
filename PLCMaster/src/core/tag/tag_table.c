@@ -74,6 +74,8 @@ int tag_table_add(TagTable_t *t, const TagEntry_t *e)
 	dest->bit_index = e->bit_index;
 	dest->kind = e->kind;
 	dest->proc_index = e->proc_index;
+	dest->alias_target = e->alias_target;
+	dest->hmi_access = e->hmi_access;
 
 	t->count++;
 	return 0;
