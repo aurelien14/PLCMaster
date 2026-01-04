@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include "backends/backend_iface.h"
+#include "core/platform/platform_thread.h"
 #include "core/platform/platform_atomic.h"
 #include <soem/soem.h>
 #include "system/config/config_static.h"
@@ -40,8 +41,12 @@ typedef struct EthercatDriver
 	size_t device_count;
 	size_t device_capacity;
 	uint64_t perf_freq;
+	PlatThreadExParams_t rt_params;
+	uint64_t period_ns;
+	uint32_t spin_threshold_ns;
 	plat_thread_t rt_thread;
-	plat_atomic_bool_t rt_running;
+	plat_atomic_bool_t rt_should_run;
+	plat_atomic_bool_t rt_is_running;
 	plat_atomic_i32_t last_wkc;
 	plat_atomic_i32_t fault_latched;
 	plat_atomic_i32_t ec_state;
@@ -49,6 +54,10 @@ typedef struct EthercatDriver
 	plat_atomic_i32_t active_out_buffer_idx;
 	plat_atomic_i32_t rt_out_buffer_idx;
 	plat_atomic_bool_t in_op;
+	plat_atomic_u64_t rt_cycle_count;
+	plat_atomic_u64_t rt_overruns;
+	plat_atomic_i64_t rt_jitter_min_ns;
+	plat_atomic_i64_t rt_jitter_max_ns;
 } EthercatDriver_t;
 
 BackendDriver_t *ethercat_backend_create(const BackendConfig_t *cfg, size_t iomap_size, size_t max_devices, size_t backend_index);

@@ -5,11 +5,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #include "core/platform/platform_thread.h"
 #include "core/platform/platform_time.h"
 
 #define EC_MAX_IFNAME_LEN 63
+#define EC_DEFAULT_PERIOD_NS 1000000ULL
+#define EC_DEFAULT_SPIN_THRESHOLD_NS 50000U
 
 static BackendDriverOps_t g_ec_ops;
 
@@ -180,12 +183,41 @@ BackendDriver_t *ethercat_backend_create(const BackendConfig_t *cfg, size_t ioma
     }
 
     (void)snprintf(impl->ifname, sizeof(impl->ifname), "%s", cfg->ifname);
-    impl->cycle_time_us = cfg->cycle_time_us;
-    impl->rt_cycle_us = cfg->cycle_time_us;
-    impl->dc_clock = cfg->dc_clock;
-    impl->iomap_size = iomap_size;
-    impl->perf_freq = 0U;
-    plat_atomic_store_bool(&impl->in_op, false);
+	{
+		uint64_t period_ns = cfg->period_ns != 0U ? cfg->period_ns : ((cfg->cycle_time_us != 0U ? (uint64_t)cfg->cycle_time_us * 1000ULL : EC_DEFAULT_PERIOD_NS));
+		uint32_t spin_threshold_ns = cfg->spin_threshold_ns != 0U ? cfg->spin_threshold_ns : EC_DEFAULT_SPIN_THRESHOLD_NS;
+		PlatThreadPriority_t rt_priority = cfg->rt_priority;
+		int rt_affinity = cfg->rt_affinity_cpu;
+		uint32_t timer_res_ms = cfg->rt_timer_resolution_ms != 0U ? cfg->rt_timer_resolution_ms : 1U;
+
+		if (rt_priority < PLAT_THREAD_PRIORITY_LOW || rt_priority > PLAT_THREAD_PRIORITY_CRITICAL)
+		{
+			rt_priority = PLAT_THREAD_PRIORITY_HIGH;
+		}
+
+		if (rt_affinity < 0 && cfg->rt_reserved_cpu >= 0)
+		{
+			rt_affinity = cfg->rt_reserved_cpu;
+		}
+		if (rt_affinity < 0)
+		{
+			rt_affinity = -1;
+		}
+
+		impl->period_ns = period_ns;
+		impl->cycle_time_us = cfg->cycle_time_us != 0U ? cfg->cycle_time_us : (uint32_t)(period_ns / 1000ULL);
+		impl->rt_cycle_us = (uint32_t)(period_ns / 1000ULL);
+		impl->spin_threshold_ns = spin_threshold_ns;
+		impl->rt_params.cls = PLAT_THREAD_RT;
+		impl->rt_params.priority = rt_priority;
+		impl->rt_params.affinity_cpu = rt_affinity;
+		impl->rt_params.timer_resolution_ms = timer_res_ms;
+		impl->rt_params.stack_size = 0U;
+	}
+	impl->dc_clock = cfg->dc_clock;
+	impl->iomap_size = iomap_size;
+	impl->perf_freq = 0U;
+	plat_atomic_store_bool(&impl->in_op, false);
 
     if (ecx_init(&impl->ctx, impl->ifname) == 0) {
         print_available_adapters();
@@ -340,7 +372,13 @@ static int ethercat_finalize_mapping(BackendDriver_t *driver)
 	plat_atomic_store_i32(&impl->last_wkc, 0);
 	plat_atomic_store_i32(&impl->fault_latched, 0);
 	plat_atomic_store_i32(&impl->ec_state, EC_STATE_NONE);
-	impl->rt_cycle_us = impl->cycle_time_us;
+	plat_atomic_store_bool(&impl->rt_should_run, false);
+	plat_atomic_store_bool(&impl->rt_is_running, false);
+	plat_atomic_store_u64(&impl->rt_cycle_count, 0ULL);
+	plat_atomic_store_u64(&impl->rt_overruns, 0ULL);
+	plat_atomic_store_i64(&impl->rt_jitter_min_ns, INT64_MAX);
+	plat_atomic_store_i64(&impl->rt_jitter_max_ns, INT64_MIN);
+	impl->rt_cycle_us = (uint32_t)(impl->period_ns / 1000ULL);
 
 	if (impl->dc_clock)
 	{
@@ -363,16 +401,23 @@ error:
 	return -1;
 }
 
-static void ethercat_copy_out_to_iomap(EthercatDriver_t *impl, int out_idx)
+static void ethercat_copy_out_to_iomap(EthercatDriver_t *impl, int out_idx, bool zero_outputs)
 {
 	size_t i;
 
 	for (i = 0; i < impl->device_count; ++i)
 	{
 		EthercatDevice_t *dev = &impl->devices[i];
-		if (dev->soem_outputs != NULL && dev->out_buffers[out_idx] != NULL && dev->out_size > 0U)
+		if (dev->soem_outputs != NULL && dev->out_size > 0U)
 		{
-			memcpy(dev->soem_outputs, dev->out_buffers[out_idx], dev->out_size);
+			if (zero_outputs || dev->out_buffers[out_idx] == NULL)
+			{
+				memset(dev->soem_outputs, 0, dev->out_size);
+			}
+			else
+			{
+				memcpy(dev->soem_outputs, dev->out_buffers[out_idx], dev->out_size);
+			}
 		}
 	}
 }
@@ -391,25 +436,54 @@ static void ethercat_copy_iomap_to_in(EthercatDriver_t *impl, int next_in_idx)
 	}
 }
 
+static void ethercat_zero_output_buffers(EthercatDriver_t *impl)
+{
+	size_t i;
+	size_t b;
+
+	for (i = 0; i < impl->device_count; ++i)
+	{
+		EthercatDevice_t *dev = &impl->devices[i];
+		if (dev->out_size == 0U)
+		{
+			continue;
+		}
+		for (b = 0; b < 2; ++b)
+		{
+			if (dev->out_buffers[b] != NULL)
+			{
+				memset(dev->out_buffers[b], 0, dev->out_size);
+			}
+		}
+		if (dev->soem_outputs != NULL)
+		{
+			memset(dev->soem_outputs, 0, dev->out_size);
+		}
+	}
+}
+
 static void *ethercat_rt_thread(void *arg)
 {
 	EthercatDriver_t *impl = (EthercatDriver_t *)arg;
 	int expected_wkc = (int)impl->expected_wkc;
-	int error_streak = 0;
-	uint64_t period_ns = (uint64_t)impl->rt_cycle_us * 1000ULL;
-	uint64_t next_deadline = plat_time_monotonic_ns() + period_ns;
+	uint64_t deadline = plat_time_monotonic_ns() + impl->period_ns;
 
-	plat_atomic_store_bool(&impl->rt_running, true);
-	printf("[EC] RT thread start period=%u us expected WKC=%u\n", impl->rt_cycle_us, (unsigned)impl->expected_wkc);
+	plat_atomic_store_bool(&impl->rt_is_running, true);
+	printf("[EC] RT thread start period=%u us expected WKC=%u affinity=%d spin=%u ns\n",
+		impl->rt_cycle_us,
+		(unsigned)impl->expected_wkc,
+		impl->rt_params.affinity_cpu,
+		(unsigned)impl->spin_threshold_ns);
 
-	while (plat_atomic_load_bool(&impl->rt_running))
+	while (plat_atomic_load_bool(&impl->rt_should_run))
 	{
 		int out_idx;
 		int cur_in;
 		int next_in;
 		int wkc;
 		uint64_t now_ns;
-		int64_t sleep_ns;
+		int64_t jitter;
+		bool zero_outputs;
 
 		out_idx = plat_atomic_load_i32(&impl->rt_out_buffer_idx);
 		if (out_idx < 0 || out_idx > 1)
@@ -418,29 +492,9 @@ static void *ethercat_rt_thread(void *arg)
 			plat_atomic_store_i32(&impl->rt_out_buffer_idx, 0);
 		}
 
-		ethercat_copy_out_to_iomap(impl, out_idx);
-
 		ecx_send_processdata(&impl->ctx);
 		wkc = ecx_receive_processdata(&impl->ctx, EC_TIMEOUTRET);
 		plat_atomic_store_i32(&impl->last_wkc, wkc);
-
-		if (expected_wkc > 0 && wkc < expected_wkc)
-		{
-			++error_streak;
-			if (error_streak > 50)
-			{
-				if (plat_atomic_load_i32(&impl->fault_latched) == 0)
-				{
-					printf("[EC] Fault latched: WKC below expected (%d < %d)\n", wkc, expected_wkc);
-				}
-				plat_atomic_store_i32(&impl->fault_latched, 1);
-				plat_atomic_store_bool(&impl->in_op, false);
-			}
-		}
-		else
-		{
-			error_streak = 0;
-		}
 
 		cur_in = plat_atomic_load_i32(&impl->active_in_buffer_idx);
 		if (cur_in < 0 || cur_in > 1)
@@ -453,26 +507,50 @@ static void *ethercat_rt_thread(void *arg)
 		ethercat_copy_iomap_to_in(impl, next_in);
 		plat_atomic_store_i32(&impl->active_in_buffer_idx, next_in);
 
-		now_ns = plat_time_monotonic_ns();
-		sleep_ns = (int64_t)(next_deadline - now_ns);
-		if (sleep_ns > 1000000LL)
+		zero_outputs = plat_atomic_load_i32(&impl->fault_latched) != 0;
+		if ((expected_wkc > 0 && wkc < expected_wkc) || plat_atomic_load_i32(&impl->ec_state) != EC_STATE_OPERATIONAL)
 		{
-			plat_thread_sleep_ms((uint32_t)(sleep_ns / 1000000LL));
-		}
-		else if (sleep_ns > 0)
-		{
-			plat_thread_yield();
+			if (plat_atomic_exchange_i32(&impl->fault_latched, 1) == 0)
+			{
+				printf("[EC] Fault latched: WKC below expected (%d < %d) or state left OP\n", wkc, expected_wkc);
+			}
+			plat_atomic_store_bool(&impl->in_op, false);
+			zero_outputs = true;
+			ethercat_zero_output_buffers(impl);
 		}
 
-		next_deadline += period_ns;
+		ethercat_copy_out_to_iomap(impl, out_idx, zero_outputs);
+
 		now_ns = plat_time_monotonic_ns();
-		if (now_ns > next_deadline + period_ns)
+		jitter = (int64_t)(now_ns - deadline);
+		if (jitter < plat_atomic_load_i64(&impl->rt_jitter_min_ns))
 		{
-			next_deadline = now_ns + period_ns;
+			plat_atomic_store_i64(&impl->rt_jitter_min_ns, jitter);
 		}
+		if (jitter > plat_atomic_load_i64(&impl->rt_jitter_max_ns))
+		{
+			plat_atomic_store_i64(&impl->rt_jitter_max_ns, jitter);
+		}
+		if (jitter > 0)
+		{
+			(void)plat_atomic_fetch_add_u64(&impl->rt_overruns, 1ULL);
+		}
+
+		if (now_ns > deadline + (impl->period_ns * 5ULL))
+		{
+			deadline = now_ns + impl->period_ns;
+		}
+
+		plat_time_sleep_until_ns(deadline, impl->spin_threshold_ns);
+		deadline += impl->period_ns;
+		(void)plat_atomic_fetch_add_u64(&impl->rt_cycle_count, 1ULL);
 	}
 
-	plat_atomic_store_bool(&impl->rt_running, false);
+	ethercat_zero_output_buffers(impl);
+	ethercat_copy_out_to_iomap(impl, 0, true);
+	ecx_send_processdata(&impl->ctx);
+	(void)ecx_receive_processdata(&impl->ctx, EC_TIMEOUTRET);
+	plat_atomic_store_bool(&impl->rt_is_running, false);
 	return NULL;
 }
 
@@ -488,6 +566,7 @@ static int ethercat_start(BackendDriver_t *driver)
 	}
 
 	memset(impl->iomap, 0, impl->iomap_size);
+	ethercat_zero_output_buffers(impl);
 
 	for (i = 0; i < 3; ++i)
 	{
@@ -511,11 +590,16 @@ static int ethercat_start(BackendDriver_t *driver)
 
 	plat_atomic_store_bool(&impl->in_op, true);
 	plat_atomic_store_i32(&impl->fault_latched, 0);
-	plat_atomic_store_bool(&impl->rt_running, true);
-	if (plat_thread_create(&impl->rt_thread, PLAT_THREAD_NORMAL, NULL, ethercat_rt_thread, impl) != 0)
+	plat_atomic_store_bool(&impl->rt_should_run, true);
+	plat_atomic_store_bool(&impl->rt_is_running, false);
+	plat_atomic_store_u64(&impl->rt_cycle_count, 0ULL);
+	plat_atomic_store_u64(&impl->rt_overruns, 0ULL);
+	plat_atomic_store_i64(&impl->rt_jitter_min_ns, INT64_MAX);
+	plat_atomic_store_i64(&impl->rt_jitter_max_ns, INT64_MIN);
+	if (plat_thread_create_ex(&impl->rt_thread, ethercat_rt_thread, impl, &impl->rt_params) != 0)
 	{
 		plat_atomic_store_bool(&impl->in_op, false);
-		plat_atomic_store_bool(&impl->rt_running, false);
+		plat_atomic_store_bool(&impl->rt_should_run, false);
 		return -1;
 	}
 	return 0;
@@ -530,11 +614,16 @@ static int ethercat_stop(BackendDriver_t *driver)
 		return -1;
 	}
 
-	if (plat_atomic_load_bool(&impl->rt_running))
+	plat_atomic_store_bool(&impl->rt_should_run, false);
+	if (plat_atomic_load_bool(&impl->rt_is_running))
 	{
-		plat_atomic_store_bool(&impl->rt_running, false);
 		plat_thread_join(&impl->rt_thread);
 	}
+
+	ethercat_zero_output_buffers(impl);
+	ethercat_copy_out_to_iomap(impl, 0, true);
+	ecx_send_processdata(&impl->ctx);
+	(void)ecx_receive_processdata(&impl->ctx, EC_TIMEOUTRET);
 
 	impl->ctx.slavelist[0].state = EC_STATE_SAFE_OP;
 	ecx_writestate(&impl->ctx, 0);
