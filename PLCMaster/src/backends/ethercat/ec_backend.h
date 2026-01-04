@@ -63,6 +63,4 @@ typedef struct EthercatDriver
 BackendDriver_t *ethercat_backend_create(const BackendConfig_t *cfg, size_t iomap_size, size_t max_devices, size_t backend_index);
 void ethercat_backend_destroy(BackendDriver_t *driver);
 
-int ethercat_cycle_once(BackendDriver_t *driver);
-
 #endif /* EC_BACKEND_H */
