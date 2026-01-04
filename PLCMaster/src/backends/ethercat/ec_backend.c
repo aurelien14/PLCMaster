@@ -670,20 +670,13 @@ static uint8_t *ethercat_get_output_data(BackendDriver_t *driver, const DeviceCo
     if (size_out != NULL) {
         *size_out = dev->out_size;
     }
-    return dev->out_buffers[idx];
-}
-
-int ethercat_cycle_once(BackendDriver_t *driver)
-{
-	/* Legacy helper retained for compatibility; RT thread now handles IO. */
-	PLAT_UNUSED(driver);
-	return 0;
+	return dev->out_buffers[idx];
 }
 
 static BackendDriverOps_t g_ec_ops = {
-    .init = ethercat_init,
-    .bind = ethercat_bind_device,
-    .finalize = ethercat_finalize_mapping,
+	.init = ethercat_init,
+	.bind = ethercat_bind_device,
+	.finalize = ethercat_finalize_mapping,
     .start = ethercat_start,
     .stop = ethercat_stop,
     .process = ethercat_process,
