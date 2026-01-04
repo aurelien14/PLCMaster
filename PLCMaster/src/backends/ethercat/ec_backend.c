@@ -240,6 +240,7 @@ static int ethercat_bind_device(BackendDriver_t *driver, const DeviceConfig_t *c
     dev->cfg = cfg;
     dev->desc = desc;
     dev->slave_index = pos;
+	impl->ctx.slavelist[pos].PO2SOconfig = desc->hooks.on_init;
     return 0;
 }
 
@@ -323,7 +324,7 @@ static int ethercat_finalize_mapping(BackendDriver_t *driver)
 		ecx_configdc(&impl->ctx);
 	}
 
-	if (ethercat_transition_safeop(impl) != 0)
+	if (ec_soem_request_safe_op(&impl->ctx) != 0)
 	{
 		goto error;
 	}

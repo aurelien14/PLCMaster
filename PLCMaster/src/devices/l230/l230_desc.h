@@ -7,6 +7,8 @@
 
 #include <stdint.h>
 
+static_assert(sizeof(float) == 4, "float must be 32-bit");
+
 #pragma pack(push, 1)
 typedef struct
 {
@@ -52,20 +54,6 @@ typedef struct
 #pragma pack(push, 1)
 typedef struct
 {
-	float Pt_Value;	//0x63A0 (value in ohm)
-	uint32_t Pt_State;	//0x63B0 (Bit 0 Error PT100)
-} L230_Pt_t;
-
-typedef struct
-{
-	float VC_Value;	//0x63C0 (value in V/mA)
-	uint32_t VC_State;	//0x69C0 (Bit 0 Error U/I)
-} L230_VC_t;
-#pragma pack(pop)
-
-#pragma pack(push, 1)
-typedef struct
-{
 	// TxPDO 0x1A00 - L230_DI_Byte0
 	struct {
 		uint8_t X30_2_In0 : 1;	//0x6080
@@ -85,14 +73,23 @@ typedef struct
 	} L230_DI_Byte1;
 
 	// TxPDO 0x1A02 - X21_CPU_Pt1 
-	L230_Pt_t X21_CPU_Pt1;
+	struct {
+		float Pt_Value;	//0x63A0 (value in ohm)
+		uint32_t Pt_State;	//0x63B0 (Bit 0 Error PT100)
+	} X21_CPU_Pt1;
 
 
 	// TxPDO 0x1A03 - X21_CPU_Pt2
-	L230_Pt_t X22_CPU_Pt2;
+	struct {
+		float Pt_Value;	//0x63C0 (value in ohm)
+		uint32_t Pt_State;	//0x63D0 (Bit 0 Error PT100)
+	} X22_CPU_Pt2;
 
 	// TxPDO 0x1A04 - X21_CPU_VC1 
-	L230_VC_t X23_CPU_VC1;
+	struct {
+		float VC_Value;	//0x63C0 (value in V/mA)
+		uint32_t VC_State;	//0x69C0 (Bit 0 Error U/I)
+	} X23_CPU_VC1;
 
 
 	// TxPDO 0x1A05 - L230_DO_Byte1
@@ -101,7 +98,7 @@ typedef struct
 		uint32_t SerialNumber;
 		uint32_t HW_Version;
 		uint32_t FW_Version;
-		uint16_t AliasAddress; /* TODO: confirm AliasAddress mapping */
+		uint16_t AliasAddress;
 	} slaveinfo;
 
 	struct {

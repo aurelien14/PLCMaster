@@ -76,7 +76,7 @@ int plc_runtime_run(Runtime_t *rt, PlcScheduler_t *sched)
 	{
 		uint32_t elapsed_ms = 0;
 
-		while (elapsed_ms < 3000)
+		while (elapsed_ms < 3000000)
 		{
 			log_backend_debug(rt);
 			plat_thread_sleep_ms(1000);

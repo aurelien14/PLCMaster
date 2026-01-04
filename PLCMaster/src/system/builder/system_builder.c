@@ -106,6 +106,7 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 			if (device_cfg->backend != NULL && strcmp(device_cfg->backend, backend_cfg->name) == 0) {
 				iomap_size += desc->rx_bytes;
 				iomap_size += desc->tx_bytes;
+				iomap_size += 1; //TODO: see why soem append 1byte becaus ISize and OSize are same as pdo(L230)
 			}
 		}
 

@@ -6,7 +6,7 @@ static const BackendConfig_t kBackendConfigs[] = {
 	{
 		.type = BACKEND_TYPE_ETHERCAT,
 		.name = "ec0",
-		.ifname = "TODO_IFNAME",
+		.ifname = "\\Device\\NPF_{FB092E67-7CA1-4E8F-966D-AC090D396487}",
 		.cycle_time_us = 1000,
 		.dc_clock = true,
 		.period_ns = 0,
@@ -30,8 +30,8 @@ static const DeviceConfig_t kDeviceConfigs[] = {
 		.io_addr = 1,
 		.expected_identity =
 			{
-				.vendor_id = 0,	/* TODO: set vendor id */
-				.product_code = 0,	/* TODO: set product code */
+				.vendor_id = 0x47535953,
+				.product_code = 0x3213335,
 			},
 	},
 };
