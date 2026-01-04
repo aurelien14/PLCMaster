@@ -71,10 +71,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)src;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)src;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\build\default\include;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\include;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\osal;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\osal\win32;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\oshw\win32;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\oshw\win32\wpcap\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\build\default\Debug;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\oshw\win32\wpcap\Lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)src;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)src;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\build\default\include;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\include;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\osal;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\osal\win32;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\oshw\win32;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\oshw\win32\wpcap\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\build\default\Release;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\oshw\win32\wpcap\Lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -115,6 +117,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>soem.lib;kernel32.lib;Packet.lib;wpcap.lib;winmm.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -130,6 +133,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>soem.lib;kernel32.lib;Packet.lib;wpcap.lib;winmm.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

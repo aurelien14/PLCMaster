@@ -44,8 +44,8 @@ int ec_backend_init(EcBackend_t *ec, const char *ifname, size_t iomap_size, bool
         return -1;
     }
 
-    (void)strncpy(ec->ifname, ifname, sizeof(ec->ifname) - 1U);
-    ec->ifname[sizeof(ec->ifname) - 1U] = '\\0';
+    (void)strncpy_s(ec->ifname, sizeof(ec->ifname) - 1U, ifname, sizeof(ec->ifname) - 1U);
+    ec->ifname[sizeof(ec->ifname) - 1U] = '\0';
     ec->dc_clock = dc_clock;
     ec->cycle_time_us = cycle_time_us;
     ec->iomap_size = iomap_size;
@@ -91,10 +91,8 @@ void ec_backend_deinit(EcBackend_t *ec)
     if (ec == NULL) {
         return;
     }
-
-    if (ec->ctx.port != NULL) {
-        ecx_close(&ec->ctx);
-    }
+    
+    ecx_close(&ec->ctx);
 
     free_buffers(ec);
     memset(ec, 0, sizeof(*ec));

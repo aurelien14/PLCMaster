@@ -66,9 +66,6 @@
     <ClCompile Include="src\core\platform\platform_time.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="tests\platform_test.c">
-      <Filter>Fichiers sources</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\backends\backend_iface.h">
