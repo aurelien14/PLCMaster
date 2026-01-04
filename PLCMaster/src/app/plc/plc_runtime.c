@@ -1,33 +1,19 @@
-/* PLC runtime entry point. TODO: wire runtime components together. */
+/* PLC runtime orchestration. */
 
-#include <stdbool.h>
 #include <inttypes.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #include "core/platform/platform_thread.h"
 #include "core/platform/platform_atomic.h"
-#include "core/runtime/runtime.h"
-#include "app/app.h"
 #include "core/plc/plc_scheduler.h"
-#include "system/builder/system_builder.h"
+#include "core/runtime/runtime.h"
 #include "backends/ethercat/ec_backend.h"
+#include "app/app.h"
+#include "app/plc/plc_runtime.h"
+
 #ifdef DEV
 #include "app/demo/demo_tag_io.h"
 #endif /* DEV */
-
-static void plc_cycle_end(void *user)
-{
-	Runtime_t *rt = (Runtime_t *)user;
-
-	if (rt == NULL)
-	{
-		return;
-	}
-
-	runtime_backends_sync_outputs(rt);
-}
 
 static void log_ethercat_debug(const BackendDriver_t *drv)
 {
@@ -67,42 +53,24 @@ static void log_backend_debug(const Runtime_t *rt)
 	}
 }
 
-int main(void)
+int plc_runtime_run(Runtime_t *rt, PlcScheduler_t *sched)
 {
-	Runtime_t rt;
-	PlcScheduler_t sched;
-	memset(&sched, 0, sizeof(sched));
-	runtime_init(&rt);
+	int rc = -1;
 
-	const SystemConfig_t *cfg = app_get_config();
-	int rc = system_build(&rt, cfg);
-
-	if (rc == 0)
+	if (rt == NULL || sched == NULL)
 	{
-		rc = plc_scheduler_init(&sched, 10);
-	}
-
-	if (rc == 0)
-	{
-		rc = plc_scheduler_set_callbacks(&sched, NULL, plc_cycle_end, &rt);
-	}
-
-	if (rc == 0)
-	{
-		rc = app_register_plc_tasks(&sched, &rt);
+		return -1;
 	}
 
 #ifdef DEV
-	if (rc == 0)
+	rc = demo_tag_io_run(rt);
+	if (rc != 0)
 	{
-		rc = demo_tag_io_run(&rt);
+		return rc;
 	}
 #endif /* DEV */
 
-	if (rc == 0)
-	{
-		rc = plc_scheduler_start(&sched);
-	}
+	rc = plc_scheduler_start(sched);
 
 	if (rc == 0)
 	{
@@ -110,11 +78,11 @@ int main(void)
 
 		while (elapsed_ms < 3000)
 		{
-			log_backend_debug(&rt);
+			log_backend_debug(rt);
 			plat_thread_sleep_ms(1000);
 			elapsed_ms += 1000;
 		}
-		if (plc_scheduler_stop(&sched) != 0)
+		if (plc_scheduler_stop(sched) != 0)
 		{
 			rc = -1;
 		}
@@ -123,7 +91,7 @@ int main(void)
 	if (rc == 0)
 	{
 		printf("OK\n");
-		printf("Tag count: %u\n", rt.tag_table.count);
+		printf("Tag count: %u\n", rt->tag_table.count);
 		app_log_bindings();
 	}
 	else
@@ -131,7 +99,5 @@ int main(void)
 		printf("FAIL rc=%d\n", rc);
 	}
 
-	runtime_deinit(&rt);
-
-	return rc == 0 ? 0 : 1;
+	return rc;
 }
