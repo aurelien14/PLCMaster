@@ -4,6 +4,10 @@
 #define BACKEND_IFACE_H
 
 #include <stddef.h>
+#include <stdint.h>
+
+struct DeviceConfig;
+struct DeviceDesc;
 
 typedef enum BackendType
 {
@@ -14,11 +18,28 @@ typedef enum BackendType
 
 #define MAX_BACKENDS 4
 
-typedef struct BackendDriver
+typedef struct BackendDriver BackendDriver_t;
+
+typedef struct BackendDriverOps
 {
-	char name[16];
+	int (*init)(BackendDriver_t *driver);
+	int (*bind)(BackendDriver_t *driver, const struct DeviceConfig *cfg, const struct DeviceDesc *desc);
+	int (*finalize)(BackendDriver_t *driver);
+	int (*start)(BackendDriver_t *driver);
+	int (*stop)(BackendDriver_t *driver);
+	int (*process)(BackendDriver_t *driver);
+	void (*sync)(BackendDriver_t *driver);
+	const uint8_t *(*get_input_data)(BackendDriver_t *driver, const struct DeviceConfig *cfg, size_t *size_out);
+	uint8_t *(*get_output_data)(BackendDriver_t *driver, const struct DeviceConfig *cfg, size_t *size_out);
+} BackendDriverOps_t;
+
+struct BackendDriver
+{
 	BackendType_t type;
+	const BackendDriverOps_t *ops;
+	char name[16];
+	char system_name[16];
 	void *impl;
-} BackendDriver_t;
+};
 
 #endif /* BACKEND_IFACE_H */
