@@ -7,6 +7,8 @@
 #include <windows.h>
 #include <mmsystem.h>
 #elif PLAT_LINUX
+#include <errno.h>
+#include <sched.h>
 #include <time.h>
 #endif
 
@@ -38,16 +40,23 @@ static uint64_t plat_timespec_ns(const struct timespec *ts)
 }
 #endif
 
-uint64_t plat_time_monotonic_ns(void)
+static uint64_t plat_time_counter_to_ns(uint64_t counter, uint64_t freq)
 {
-#if PLAT_WINDOWS
-	uint64_t freq = plat_query_freq();
-	uint64_t ticks = plat_query_counter();
 	if (freq == 0)
 	{
 		return 0;
 	}
-	return (ticks * 1000000000ULL) / freq;
+
+	uint64_t seconds = counter / freq;
+	uint64_t remainder = counter % freq;
+
+	return seconds * 1000000000ULL + (remainder * 1000000000ULL) / freq;
+}
+
+uint64_t plat_time_now_ns(void)
+{
+#if PLAT_WINDOWS
+	return plat_time_counter_to_ns(plat_query_counter(), plat_query_freq());
 #elif PLAT_LINUX
 	struct timespec ts;
 	if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0)
@@ -58,6 +67,11 @@ uint64_t plat_time_monotonic_ns(void)
 #else
 	return 0;
 #endif
+}
+
+uint64_t plat_time_monotonic_ns(void)
+{
+	return plat_time_now_ns();
 }
 
 uint64_t plat_time_monotonic_us(void)
@@ -90,6 +104,91 @@ uint64_t plat_time_perf_freq(void)
 #else
 	return 0;
 #endif
+}
+
+void plat_time_sleep_until_ns(uint64_t deadline_ns, uint32_t spin_threshold_ns)
+{
+	const uint64_t sleep_threshold_ns = 1000000ULL;
+
+	for (;;)
+	{
+		uint64_t now = plat_time_now_ns();
+		if (now == 0 || now >= deadline_ns)
+		{
+			break;
+		}
+
+		uint64_t remaining = deadline_ns - now;
+
+		if (remaining > sleep_threshold_ns)
+		{
+#if PLAT_WINDOWS
+			DWORD sleep_ms = (DWORD)((remaining - sleep_threshold_ns) / 1000000ULL);
+			if (sleep_ms == 0)
+			{
+				sleep_ms = 1;
+			}
+			Sleep(sleep_ms);
+#elif PLAT_LINUX
+			struct timespec ts;
+			ts.tv_sec = (time_t)(remaining / 1000000000ULL);
+			ts.tv_nsec = (long)(remaining % 1000000000ULL);
+			if (ts.tv_nsec < 1000000L)
+			{
+				ts.tv_nsec = 1000000L;
+			}
+			while (nanosleep(&ts, &ts) == -1 && errno == EINTR)
+			{
+			}
+#else
+			break;
+#endif
+			continue;
+		}
+
+		if (spin_threshold_ns > 0 && remaining <= spin_threshold_ns)
+		{
+			while (1)
+			{
+				now = plat_time_now_ns();
+				if (now == 0 || now >= deadline_ns)
+				{
+					break;
+				}
+			}
+			break;
+		}
+
+#if PLAT_WINDOWS
+		SwitchToThread();
+#elif PLAT_LINUX
+		sched_yield();
+#else
+		break;
+#endif
+	}
+}
+
+void plat_time_busy_wait_ns(uint64_t duration_ns)
+{
+	uint64_t start = plat_time_now_ns();
+	if (start == 0 || duration_ns == 0)
+	{
+		return;
+	}
+
+	while (1)
+	{
+		uint64_t now = plat_time_now_ns();
+		if (now == 0)
+		{
+			break;
+		}
+		if ((now - start) >= duration_ns)
+		{
+			break;
+		}
+	}
 }
 
 #if PLAT_WINDOWS

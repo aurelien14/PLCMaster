@@ -10,6 +10,53 @@ typedef struct
 	int stop;
 } rt_thread_ctx_t;
 
+static void run_sleep_jitter_test(void)
+{
+	const uint32_t iterations = 1000;
+	const uint64_t period_ns = 1000000ULL;
+	const uint32_t spin_threshold_ns = 50000;
+
+	int64_t min_err = INT64_MAX;
+	int64_t max_err = INT64_MIN;
+	int64_t sum_err = 0;
+
+	uint64_t deadline = plat_time_now_ns();
+	if (deadline == 0)
+	{
+		printf("plat_time_now_ns unavailable\n");
+		return;
+	}
+	deadline += period_ns;
+
+	for (uint32_t i = 0; i < iterations; ++i)
+	{
+		plat_time_sleep_until_ns(deadline, spin_threshold_ns);
+
+		uint64_t now = plat_time_now_ns();
+		if (now == 0)
+		{
+			printf("plat_time_now_ns failed\n");
+			return;
+		}
+
+		int64_t err = (int64_t)(now - deadline);
+		if (err < min_err)
+		{
+			min_err = err;
+		}
+		if (err > max_err)
+		{
+			max_err = err;
+		}
+		sum_err += err;
+
+		deadline += period_ns;
+	}
+
+	printf("sleep_until jitter (ns): min=%" PRId64 " max=%" PRId64 " avg=%" PRId64 " (iterations=%u)\n",
+	       min_err, max_err, sum_err / (int64_t)iterations, iterations);
+}
+
 static void *rt_thread_fn(void *arg)
 {
 	rt_thread_ctx_t *ctx = (rt_thread_ctx_t *)arg;
@@ -72,6 +119,8 @@ int main(void)
 	{
 		printf("Failed to start RT thread\n");
 	}
+
+	run_sleep_jitter_test();
 
 	return 0;
 }
