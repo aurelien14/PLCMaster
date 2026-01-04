@@ -11,8 +11,6 @@
 #include <stdio.h>
 #include <string.h>
 
-static EcBackend_t g_ec_backends[MAX_BACKENDS];
-
 static void cleanup_backends(Runtime_t *rt)
 {
 	size_t idx;
@@ -24,7 +22,10 @@ static void cleanup_backends(Runtime_t *rt)
 	for (idx = 0; idx < rt->backend_count && idx < MAX_BACKENDS; ++idx) {
 		BackendDriver_t *drv = &rt->backend_array[idx];
 		if (drv->type == BACKEND_TYPE_ETHERCAT && drv->impl != NULL) {
-			ec_backend_deinit((EcBackend_t *)drv->impl);
+			if (drv->ops != NULL && drv->ops->stop != NULL) {
+				(void)drv->ops->stop(drv);
+			}
+			ethercat_backend_destroy(drv);
 		}
 		memset(drv, 0, sizeof(*drv));
 	}
@@ -87,7 +88,6 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 	for (backend_index = 0; backend_index < config->backend_count; ++backend_index) {
 		const BackendConfig_t *backend_cfg = &config->backends[backend_index];
 		BackendDriver_t *drv;
-		EcBackend_t *ec_impl;
 		size_t iomap_size = 0U;
 
 		if (backend_cfg->name == NULL || backend_cfg->ifname == NULL) {
@@ -117,15 +117,44 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 			iomap_size = 256U;
 		}
 
-		ec_impl = &g_ec_backends[rt->backend_count];
-		memset(ec_impl, 0, sizeof(*ec_impl));
-		if (ec_backend_init(ec_impl, backend_cfg->ifname, iomap_size, backend_cfg->dc_clock, backend_cfg->cycle_time_us) != 0) {
+		drv = ethercat_backend_create(backend_cfg, iomap_size, config->device_count, backend_index);
+		if (drv == NULL) {
 			goto cleanup;
 		}
 
-		drv->impl = ec_impl;
+		rt->backend_array[rt->backend_count] = *drv;
+		drv = &rt->backend_array[rt->backend_count];
 		rt->backend_count++;
 		backends_initialized = 1;
+
+		if (drv->ops == NULL || drv->ops->init == NULL || drv->ops->bind == NULL || drv->ops->finalize == NULL || drv->ops->start == NULL) {
+			goto cleanup;
+		}
+
+		if (drv->ops->init(drv) != 0) {
+			goto cleanup;
+		}
+
+		for (device_index = 0; device_index < config->device_count; ++device_index) {
+			const DeviceConfig_t *device_cfg = &config->devices[device_index];
+			const DeviceDesc_t *desc = device_registry_find(device_cfg->model);
+			if (desc == NULL) {
+				goto cleanup;
+			}
+			if (device_cfg->backend != NULL && strcmp(device_cfg->backend, backend_cfg->name) == 0) {
+				if (drv->ops->bind(drv, device_cfg, desc) != 0) {
+					goto cleanup;
+				}
+			}
+		}
+
+		if (drv->ops->finalize(drv) != 0) {
+			goto cleanup;
+		}
+
+		if (drv->ops->start(drv) != 0) {
+			goto cleanup;
+		}
 	}
 
 	if (config->process_var_count > 0 && config->process_vars == NULL) {

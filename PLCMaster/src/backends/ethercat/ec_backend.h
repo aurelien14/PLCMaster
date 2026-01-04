@@ -7,36 +7,48 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "backends/backend_iface.h"
 #include "core/platform/platform_atomic.h"
 #include <soem/soem.h>
+#include "system/config/config_static.h"
 
-typedef struct EcBackend
+typedef struct EthercatDevice
 {
+    const DeviceConfig_t *cfg;
+    const DeviceDesc_t *desc;
+    uint16_t slave_index;
+    uint8_t *soem_inputs;
+    uint8_t *soem_outputs;
+    uint8_t *in_buffers[2];
+    uint8_t *out_buffers[2];
+    uint32_t in_size;
+    uint32_t out_size;
+} EthercatDevice_t;
+
+typedef struct EthercatDriver
+{
+    BackendDriver_t base;
     ecx_contextt ctx;
     char ifname[64];
     bool dc_clock;
     uint32_t cycle_time_us;
     uint8_t *iomap;
     size_t iomap_size;
-    uint8_t *in_buf[2];
-    size_t in_size;
-    uint8_t *out_buf[2];
-    size_t out_size;
-    plat_atomic_i32_t active_in_idx;
-    plat_atomic_i32_t active_out_idx;
-    plat_atomic_i32_t build_out_idx;
-    plat_atomic_bool_t out_dirty;
-} EcBackend_t;
+    uint16_t expected_wkc;
+    EthercatDevice_t *devices;
+    size_t device_count;
+    size_t device_capacity;
+    uint64_t perf_freq;
+    plat_atomic_i32_t active_in_buffer_idx;
+    plat_atomic_i32_t active_out_buffer_idx;
+    plat_atomic_i32_t rt_out_buffer_idx;
+    plat_atomic_bool_t in_op;
+} EthercatDriver_t;
 
-int ec_backend_init(EcBackend_t *ec, const char *ifname, size_t iomap_size, bool dc_clock, uint32_t cycle_time_us);
-void ec_backend_deinit(EcBackend_t *ec);
+BackendDriver_t *ethercat_backend_create(const BackendConfig_t *cfg, size_t iomap_size, size_t max_devices, size_t backend_index);
+void ethercat_backend_destroy(BackendDriver_t *driver);
 
-const uint8_t *ec_backend_get_in_ptr(const EcBackend_t *ec);
-uint8_t *ec_backend_get_out_build_ptr(EcBackend_t *ec);
-
-void ec_backend_out_commit(EcBackend_t *ec);
-
-void ec_backend_on_cycle_rx(EcBackend_t *ec, const uint8_t *src_iomap, size_t nbytes);
-void ec_backend_on_cycle_tx(EcBackend_t *ec, uint8_t *dst_iomap, size_t nbytes);
+int ethercat_cycle_once(BackendDriver_t *driver);
+void print_available_adapters(void);
 
 #endif /* EC_BACKEND_H */
