@@ -141,6 +141,7 @@
     <ClCompile Include="src\backends\ethercat\ec_backend.c" />
     <ClCompile Include="src\backends\ethercat\ethercat_minimal.c" />
     <ClCompile Include="src\backends\modbus\mb_backend.c" />
+    <ClCompile Include="src\backends\registry\backend_registry.c" />
     <ClCompile Include="src\core\platform\platform_thread.c" />
     <ClCompile Include="src\core\platform\platform_time.c" />
     <ClCompile Include="src\core\runtime\runtime.c" />
@@ -161,6 +162,7 @@
     <ClInclude Include="src\backends\ethercat\ec_backend.h" />
     <ClInclude Include="src\backends\ethercat\ethercat_minimal.h" />
     <ClInclude Include="src\backends\modbus\mb_backend.h" />
+    <ClInclude Include="src\backends\registry\backend_registry.h" />
     <ClInclude Include="src\core\platform\platform_atomic.h" />
     <ClInclude Include="src\core\platform\platform_detect.h" />
     <ClInclude Include="src\core\platform\platform_thread.h" />

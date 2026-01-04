@@ -7,10 +7,12 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "backends/backend_iface.h"
 #include "devices/device_desc.h"
 
 typedef struct BackendConfig
 {
+    BackendType_t type;
     const char *name;
     const char *ifname;     /* TODO: set interface name */
     uint32_t cycle_time_us;

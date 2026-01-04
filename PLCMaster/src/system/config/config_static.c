@@ -4,6 +4,7 @@
 
 static const BackendConfig_t kBackendConfigs[] = {
     {
+        .type = BACKEND_TYPE_ETHERCAT,
         .name = "ec0",
         .ifname = "TODO_IFNAME",
         .cycle_time_us = 1000,
