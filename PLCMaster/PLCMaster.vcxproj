@@ -138,7 +138,6 @@
     <ClCompile Include="src\backends\modbus\mb_backend.c" />
     <ClCompile Include="src\core\platform\platform_thread.c" />
     <ClCompile Include="src\core\platform\platform_time.c" />
-    <ClCompile Include="src\core\plc\plc_scheduler.c" />
     <ClCompile Include="src\core\runtime\runtime.c" />
     <ClCompile Include="src\core\rt\rt_time.c" />
     <ClCompile Include="src\core\status\status_tags.c" />
@@ -147,6 +146,8 @@
     <ClCompile Include="src\devices\l230\l230_desc.c" />
     <ClCompile Include="src\devices\registry\device_registry.c" />
     <ClCompile Include="src\plc\plc_app.c" />
+    <ClCompile Include="src\plc\plc_scheduler.c" />
+    <ClCompile Include="src\plc\plc_tasks_demo.c" />
     <ClCompile Include="src\system\builder\system_builder.c" />
     <ClCompile Include="src\system\config\config_static.c" />
     <ClCompile Include="tests\platform_test.c" />
@@ -159,7 +160,6 @@
     <ClInclude Include="src\core\platform\platform_detect.h" />
     <ClInclude Include="src\core\platform\platform_thread.h" />
     <ClInclude Include="src\core\platform\platform_time.h" />
-    <ClInclude Include="src\core\plc\plc_scheduler.h" />
     <ClInclude Include="src\core\runtime\runtime.h" />
     <ClInclude Include="src\core\rt\rt_time.h" />
     <ClInclude Include="src\core\status\status_tags.h" />
@@ -170,6 +170,9 @@
     <ClInclude Include="src\devices\registry\device_registry.h" />
     <ClInclude Include="src\plc\io_view.h" />
     <ClInclude Include="src\plc\plc_app.h" />
+    <ClInclude Include="src\plc\plc_scheduler.h" />
+    <ClInclude Include="src\plc\plc_task.h" />
+    <ClInclude Include="src\plc\plc_tasks_demo.h" />
     <ClInclude Include="src\system\builder\system_builder.h" />
     <ClInclude Include="src\system\config\config_static.h" />
   </ItemGroup>
