@@ -4,15 +4,40 @@
 
 #include "core/tag/tag_api.h"
 #include "devices/registry/device_registry.h"
+#include "backends/backend_iface.h"
+#include "backends/ethercat/ec_backend.h"
 
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
+static EcBackend_t g_ec_backends[MAX_BACKENDS];
+
+static void cleanup_backends(Runtime_t *rt)
+{
+	size_t idx;
+
+	if (rt == NULL) {
+		return;
+	}
+
+	for (idx = 0; idx < rt->backend_count && idx < MAX_BACKENDS; ++idx) {
+		BackendDriver_t *drv = &rt->backend_array[idx];
+		if (drv->type == BACKEND_TYPE_ETHERCAT && drv->impl != NULL) {
+			ec_backend_deinit((EcBackend_t *)drv->impl);
+		}
+		memset(drv, 0, sizeof(*drv));
+	}
+
+	rt->backend_count = 0U;
+	rt->backends = NULL;
+}
+
 int system_build(Runtime_t *rt, const SystemConfig_t *config)
 {
 	size_t device_index;
 	size_t backend_index;
+	int backends_initialized = 0;
 
 	if (rt == NULL || config == NULL) {
 		return -1;
@@ -51,8 +76,60 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 		}
 	}
 
-	if (config->process_var_count > 0 && config->process_vars == NULL) {
+	if (config->backend_count > MAX_BACKENDS) {
 		return -1;
+	}
+
+	memset(rt->backend_array, 0, sizeof(rt->backend_array));
+	rt->backend_count = 0U;
+	rt->backends = rt->backend_array;
+
+	for (backend_index = 0; backend_index < config->backend_count; ++backend_index) {
+		const BackendConfig_t *backend_cfg = &config->backends[backend_index];
+		BackendDriver_t *drv;
+		EcBackend_t *ec_impl;
+		size_t iomap_size = 0U;
+
+		if (backend_cfg->name == NULL || backend_cfg->ifname == NULL) {
+			goto cleanup;
+		}
+
+		drv = &rt->backend_array[rt->backend_count];
+		memset(drv, 0, sizeof(*drv));
+		drv->type = BACKEND_TYPE_ETHERCAT;
+		if (snprintf(drv->name, sizeof(drv->name), "%s", backend_cfg->name) < 0) {
+			goto cleanup;
+		}
+
+		for (device_index = 0; device_index < config->device_count; ++device_index) {
+			const DeviceConfig_t *device_cfg = &config->devices[device_index];
+			const DeviceDesc_t *desc = device_registry_find(device_cfg->model);
+			if (desc == NULL) {
+				goto cleanup;
+			}
+			if (device_cfg->backend != NULL && strcmp(device_cfg->backend, backend_cfg->name) == 0) {
+				iomap_size += desc->rx_bytes;
+				iomap_size += desc->tx_bytes;
+			}
+		}
+
+		if (iomap_size == 0U) {
+			iomap_size = 256U;
+		}
+
+		ec_impl = &g_ec_backends[rt->backend_count];
+		memset(ec_impl, 0, sizeof(*ec_impl));
+		if (ec_backend_init(ec_impl, backend_cfg->ifname, iomap_size, backend_cfg->dc_clock, backend_cfg->cycle_time_us) != 0) {
+			goto cleanup;
+		}
+
+		drv->impl = ec_impl;
+		rt->backend_count++;
+		backends_initialized = 1;
+	}
+
+	if (config->process_var_count > 0 && config->process_vars == NULL) {
+		goto cleanup;
 	}
 
 	if (config->process_vars != NULL) {
@@ -60,7 +137,7 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 		size_t max_proc = sizeof(rt->proc_store.values) / sizeof(rt->proc_store.values[0]);
 
 		if (config->process_var_count > max_proc) {
-			return -1;
+			goto cleanup;
 		}
 
 		for (process_index = 0; process_index < config->process_var_count; ++process_index) {
@@ -72,12 +149,12 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 			memset(&entry, 0, sizeof(entry));
 			rc = snprintf(entry.full_name, sizeof(entry.full_name), "proc.%s", proc_desc->name);
 			if (rc < 0 || (size_t)rc >= sizeof(entry.full_name)) {
-				return -1;
+				goto cleanup;
 			}
 
 			rc = snprintf(entry.backend_name, sizeof(entry.backend_name), "proc");
 			if (rc < 0 || (size_t)rc >= sizeof(entry.backend_name)) {
-				return -1;
+				goto cleanup;
 			}
 
 			entry.type = proc_desc->type;
@@ -88,7 +165,7 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 			entry.proc_index = (uint32_t)process_index;
 
 			if (tag_table_add(&rt->tag_table, &entry) != 0) {
-				return -1;
+				goto cleanup;
 			}
 
 			value_slot = &rt->proc_store.values[process_index];
@@ -111,7 +188,7 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 				value_slot->v.f = proc_desc->initial.f;
 				break;
 			default:
-				return -1;
+				goto cleanup;
 			}
 		}
 
@@ -119,7 +196,7 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 	}
 
 	if (config->hmi_tag_count > 0 && config->hmi_tags == NULL) {
-		return -1;
+		goto cleanup;
 	}
 
 	if (config->hmi_tags != NULL) {
@@ -132,28 +209,28 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 			int rc;
 
 			if (hmi_desc->alias_of == NULL) {
-				return -1;
+				goto cleanup;
 			}
 
 			target_id = tag_table_find_id(&rt->tag_table, hmi_desc->alias_of);
 			if (target_id == 0) {
-				return -1;
+				goto cleanup;
 			}
 
 			target_entry = tag_table_get(&rt->tag_table, target_id);
 			if (target_entry == NULL) {
-				return -1;
+				goto cleanup;
 			}
 
 			memset(&entry, 0, sizeof(entry));
 			rc = snprintf(entry.full_name, sizeof(entry.full_name), "hmi.%s", hmi_desc->name);
 			if (rc < 0 || (size_t)rc >= sizeof(entry.full_name)) {
-				return -1;
+				goto cleanup;
 			}
 
 			rc = snprintf(entry.backend_name, sizeof(entry.backend_name), "hmi");
 			if (rc < 0 || (size_t)rc >= sizeof(entry.backend_name)) {
-				return -1;
+				goto cleanup;
 			}
 
 			entry.type = target_entry->type;
@@ -166,7 +243,7 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 			entry.hmi_access = (uint8_t)hmi_desc->access;
 
 			if (tag_table_add(&rt->tag_table, &entry) != 0) {
-				return -1;
+				goto cleanup;
 			}
 		}
 	}
@@ -177,7 +254,7 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 		uint32_t tag_index;
 
 		if (desc == NULL) {
-			return -1;
+			goto cleanup;
 		}
 
 		for (tag_index = 0; tag_index < desc->tag_count; ++tag_index) {
@@ -188,12 +265,12 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 			memset(&entry, 0, sizeof(entry));
 			rc = snprintf(entry.full_name, sizeof(entry.full_name), "%s.%s", device_cfg->name, tag_desc->name);
 			if (rc < 0 || (size_t)rc >= sizeof(entry.full_name)) {
-				return -1;
+				goto cleanup;
 			}
 
 			rc = snprintf(entry.backend_name, sizeof(entry.backend_name), "%s", device_cfg->backend);
 			if (rc < 0 || (size_t)rc >= sizeof(entry.backend_name)) {
-				return -1;
+				goto cleanup;
 			}
 
 			entry.type = tag_desc->type;
@@ -204,10 +281,16 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 			entry.proc_index = 0U;
 
 			if (tag_table_add(&rt->tag_table, &entry) != 0) {
-				return -1;
+				goto cleanup;
 			}
 		}
 	}
 
 	return 0;
+
+cleanup:
+	if (backends_initialized) {
+		cleanup_backends(rt);
+	}
+	return -1;
 }

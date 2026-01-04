@@ -2,11 +2,14 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "core/platform/platform_thread.h"
 #include "core/runtime/runtime.h"
 #include "core/tag/tag_api.h"
+#include "backends/backend_iface.h"
+#include "backends/ethercat/ec_backend.h"
 #include "plc/plc_app.h"
 #include "plc/plc_scheduler.h"
 #include "plc/plc_tasks_demo.h"
@@ -28,6 +31,9 @@ int main(void)
 
 	const SystemConfig_t *cfg = get_static_config();
 	int rc = system_build(&rt, cfg);
+	EcBackend_t *ec_backend = NULL;
+	uint8_t *fake_rx = NULL;
+	uint8_t *fake_tx = NULL;
 
 	if (rc == 0)
 	{
@@ -43,8 +49,16 @@ int main(void)
 		float temp_read = 0.0f;
 		bool run_read = false;
 		uint16_t alarm_read = 0U;
+		TagId_t io_in_id = tag_table_find_id(&rt.tag_table, "CPU_IO.X30_2_In0");
+		TagId_t io_out_id = tag_table_find_id(&rt.tag_table, "CPU_IO.X15_Out0");
+		const TagEntry_t *io_in_entry = NULL;
+		const TagEntry_t *io_out_entry = NULL;
 
 		if (temp_sp_id == 0 || run_cmd_id == 0 || hmi_temp_sp_id == 0 || hmi_alarm_code_id == 0)
+		{
+			rc = -1;
+		}
+		if (rc == 0 && (io_in_id == 0 || io_out_id == 0))
 		{
 			rc = -1;
 		}
@@ -113,6 +127,86 @@ int main(void)
 		{
 			printf("hmi.alarm_code after failed write = %u\n", alarm_read);
 		}
+		if (rc == 0)
+		{
+			size_t backend_index;
+			for (backend_index = 0; backend_index < rt.backend_count; ++backend_index)
+			{
+				BackendDriver_t *drv = &rt.backend_array[backend_index];
+				if (drv->type == BACKEND_TYPE_ETHERCAT && strcmp(drv->name, "ec0") == 0)
+				{
+					ec_backend = (EcBackend_t *)drv->impl;
+					break;
+				}
+			}
+			if (ec_backend == NULL)
+			{
+				rc = -1;
+			}
+		}
+		if (rc == 0)
+		{
+			fake_rx = (uint8_t *)malloc(ec_backend->iomap_size);
+			fake_tx = (uint8_t *)malloc(ec_backend->iomap_size);
+			if (fake_rx == NULL || fake_tx == NULL)
+			{
+				rc = -1;
+			}
+			else
+			{
+				memset(fake_rx, 0, ec_backend->iomap_size);
+				memset(fake_tx, 0, ec_backend->iomap_size);
+			}
+		}
+		if (rc == 0)
+		{
+			io_in_entry = tag_table_get(&rt.tag_table, io_in_id);
+			io_out_entry = tag_table_get(&rt.tag_table, io_out_id);
+			if (io_in_entry == NULL || io_out_entry == NULL)
+			{
+				rc = -1;
+			}
+		}
+		if (rc == 0)
+		{
+			size_t in_offset = io_in_entry->offset_byte;
+			uint8_t in_mask = (uint8_t)(1U << io_in_entry->bit_index);
+			if (in_offset >= ec_backend->iomap_size)
+			{
+				rc = -1;
+			}
+			else
+			{
+				fake_rx[in_offset] |= in_mask;
+				ec_backend_on_cycle_rx(ec_backend, fake_rx, ec_backend->iomap_size);
+				const uint8_t *in_ptr = ec_backend_get_in_ptr(ec_backend);
+				if (in_ptr == NULL)
+				{
+					rc = -1;
+				}
+				else
+				{
+					printf("Simulated IN bit at offset %zu -> %s\n", in_offset, (in_ptr[in_offset] & in_mask) ? "1" : "0");
+				}
+			}
+		}
+		if (rc == 0)
+		{
+			size_t out_offset = io_out_entry->offset_byte;
+			uint8_t out_mask = (uint8_t)(1U << io_out_entry->bit_index);
+			uint8_t *out_build = ec_backend_get_out_build_ptr(ec_backend);
+			if (out_build == NULL || out_offset >= ec_backend->iomap_size)
+			{
+				rc = -1;
+			}
+			else
+			{
+				out_build[out_offset] |= out_mask;
+				ec_backend_out_commit(ec_backend);
+				ec_backend_on_cycle_tx(ec_backend, fake_tx, ec_backend->iomap_size);
+				printf("Simulated OUT bit at offset %zu committed -> %s\n", out_offset, (fake_tx[out_offset] & out_mask) ? "1" : "0");
+			}
+		}
 	}
 
 	if (rc == 0)
@@ -175,6 +269,12 @@ int main(void)
 		printf("FAIL rc=%d\n", rc);
 	}
 
+	if (ec_backend != NULL)
+	{
+		ec_backend_deinit(ec_backend);
+	}
+	free(fake_rx);
+	free(fake_tx);
 	runtime_deinit(&rt);
 
 	return rc == 0 ? 0 : 1;
