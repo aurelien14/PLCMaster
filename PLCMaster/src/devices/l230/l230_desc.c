@@ -4,8 +4,10 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <soem/soem.h>
 
 #define L230_MODULE_NUMBER 1
+#define L230_WATCHDOG_TIMER_MS 1000
 
 static const TagDesc_t L230_TAGS[] = {
     { "X30_2_In0", TAG_DIR_IN, TAG_T_BOOL, (uint32_t)offsetof(L230_TX_PDO_t, L230_DI_Byte0), 0, NULL, NULL },
@@ -43,15 +45,29 @@ static const TagDesc_t L230_TAGS[] = {
     { "X23_CPU_VC1_Ctrl", TAG_DIR_OUT, TAG_T_U32, (uint32_t)offsetof(L230_RX_PDO_t, X23_CPU_VC1_Ctrl), 0, NULL, NULL },
 };
 
+static void config_hook_EL230(ecx_contextt* ctx, uint16_t slave)
+{
+    ec_slavet* pslave = &ctx->slavelist[slave];
+
+    pslave->SM[2].StartAddr = 0x1100;
+    pslave->SM[2].SMflags = 0x64;
+    pslave->SM[3].StartAddr = 0x1300;
+    pslave->SM[3].SMflags = 0x20;
+
+    uint16_t new_timeout = 1000;
+    ecx_FPWRw(&ctx->port, pslave->configadr, 0x420,
+        new_timeout, EC_TIMEOUTRET);
+}
+
 const DeviceDesc_t DEVICE_DESC_L230 = {
     .model = "L230",
-    .vendor_id = 0,
-    .product_code = 0,
+    .vendor_id = 0x47535953,
+    .product_code = 0x3213335,
     .rx_bytes = sizeof(L230_RX_PDO_t),
     .tx_bytes = sizeof(L230_TX_PDO_t),
     .tags = L230_TAGS,
     .tag_count = (uint32_t)(sizeof(L230_TAGS) / sizeof(L230_TAGS[0])),
-    .hooks = { 0 },
+    .hooks = { .on_init = config_hook_EL230 },
 };
 
 const char *l230_get_model_identifier(void)

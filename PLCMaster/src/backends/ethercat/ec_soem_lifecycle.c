@@ -144,7 +144,7 @@ void ec_soem_close(ecx_contextt *ctx)
 		return;
 	}
 
-	if (ctx->slavelist != NULL)
+	if (ctx->slavecount > 0)
 	{
 		ctx->slavelist[0].state = EC_STATE_INIT;
 		ecx_writestate(ctx, 0);
