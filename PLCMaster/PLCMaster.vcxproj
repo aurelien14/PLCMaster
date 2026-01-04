@@ -137,7 +137,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\apps\plc_runtime\main.c" />
+    <ClCompile Include="src\main.c" />
     <ClCompile Include="src\backends\ethercat\ec_backend.c" />
     <ClCompile Include="src\backends\ethercat\ethercat_minimal.c" />
     <ClCompile Include="src\backends\modbus\mb_backend.c" />
@@ -154,6 +154,7 @@
     <ClCompile Include="src\devices\registry\device_registry.c" />
     <ClCompile Include="src\app\app.c" />
     <ClCompile Include="src\app\plc\plc_app.c" />
+    <ClCompile Include="src\app\plc\plc_runtime.c" />
     <ClCompile Include="src\core\plc\plc_scheduler.c" />
     <ClCompile Include="src\app\plc\plc_tasks_demo.c" />
     <ClCompile Include="src\system\builder\system_builder.c" />
@@ -182,6 +183,7 @@
     <ClInclude Include="src\app\app.h" />
     <ClInclude Include="src\app\io\io_view.h" />
     <ClInclude Include="src\app\plc\plc_app.h" />
+    <ClInclude Include="src\app\plc\plc_runtime.h" />
     <ClInclude Include="src\core\plc\plc_scheduler.h" />
     <ClInclude Include="src\core\plc\plc_task.h" />
     <ClInclude Include="src\app\plc\plc_tasks_demo.h" />

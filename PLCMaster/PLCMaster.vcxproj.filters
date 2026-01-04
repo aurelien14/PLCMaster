@@ -21,7 +21,7 @@
     <ClCompile Include="src\backends\ethercat\ethercat_minimal.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="src\apps\plc_runtime\main.c">
+    <ClCompile Include="src\main.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
     <ClCompile Include="src\core\runtime\runtime.c">
@@ -81,6 +81,9 @@
     <ClCompile Include="src\app\demo\demo_tag_io.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
+    <ClCompile Include="src\app\plc\plc_runtime.c">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\backends\backend_iface.h">
@@ -117,6 +120,9 @@
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
     <ClInclude Include="src\app\plc\plc_app.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="src\app\plc\plc_runtime.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
     <ClInclude Include="src\core\plc\plc_scheduler.h">
