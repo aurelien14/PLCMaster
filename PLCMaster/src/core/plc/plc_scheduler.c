@@ -1,6 +1,6 @@
 /* PLC scheduler implementation. */
 
-#include "plc/plc_scheduler.h"
+#include "core/plc/plc_scheduler.h"
 
 #include <inttypes.h>
 #include <stdio.h>

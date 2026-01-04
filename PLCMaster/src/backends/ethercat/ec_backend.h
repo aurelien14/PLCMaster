@@ -11,7 +11,7 @@
 #include "core/platform/platform_thread.h"
 #include "core/platform/platform_atomic.h"
 #include <soem/soem.h>
-#include "system/config/config_static.h"
+#include "app/config/config_static.h"
 
 typedef struct EthercatDevice
 {

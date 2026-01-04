@@ -2,7 +2,7 @@
 
 #include <stddef.h>
 
-#include "plc/plc_app.h"
+#include "app/plc/plc_app.h"
 
 int plc_app_bind(PlcApp_t* app, const TagTable_t* tags)
 {

@@ -6,7 +6,7 @@
 #include <stddef.h>
 
 #include "backends/backend_iface.h"
-#include "system/config/config_static.h"
+#include "app/config/config_static.h"
 
 BackendDriver_t *backend_create(
 	const BackendConfig_t *cfg,

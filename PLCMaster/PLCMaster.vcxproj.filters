@@ -45,19 +45,19 @@
     <ClCompile Include="src\devices\registry\device_registry.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="src\plc\plc_app.c">
+    <ClCompile Include="src\app\plc\plc_app.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="src\plc\plc_scheduler.c">
+    <ClCompile Include="src\core\plc\plc_scheduler.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="src\plc\plc_tasks_demo.c">
+    <ClCompile Include="src\app\plc\plc_tasks_demo.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
     <ClCompile Include="src\system\builder\system_builder.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="src\system\config\config_static.c">
+    <ClCompile Include="src\app\config\config_static.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
     <ClCompile Include="src\backends\modbus\mb_backend.c">
@@ -104,25 +104,25 @@
     <ClInclude Include="src\devices\device_desc.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="src\plc\io_view.h">
+    <ClInclude Include="src\app\io\io_view.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="src\plc\plc_app.h">
+    <ClInclude Include="src\app\plc\plc_app.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="src\plc\plc_scheduler.h">
+    <ClInclude Include="src\core\plc\plc_scheduler.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="src\plc\plc_task.h">
+    <ClInclude Include="src\core\plc\plc_task.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="src\plc\plc_tasks_demo.h">
+    <ClInclude Include="src\app\plc\plc_tasks_demo.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
     <ClInclude Include="src\system\builder\system_builder.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="src\system\config\config_static.h">
+    <ClInclude Include="src\app\config\config_static.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
     <ClInclude Include="src\backends\ethercat\ec_backend.h">
