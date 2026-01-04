@@ -27,6 +27,8 @@ typedef struct TagEntry
     char backend_name[16];
     TagKind_t kind;
     uint32_t proc_index;
+    TagId_t alias_target;
+    uint8_t hmi_access;
 } TagEntry_t;
 
 typedef struct TagTable

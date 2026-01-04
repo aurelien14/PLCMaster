@@ -29,10 +29,13 @@ int main(void)
 	{
 		TagId_t temp_sp_id = tag_table_find_id(&rt.tag_table, "proc.temp_sp");
 		TagId_t run_cmd_id = tag_table_find_id(&rt.tag_table, "proc.run_cmd");
+		TagId_t hmi_temp_sp_id = tag_table_find_id(&rt.tag_table, "hmi.temp_setpoint");
+		TagId_t hmi_alarm_code_id = tag_table_find_id(&rt.tag_table, "hmi.alarm_code");
 		float temp_read = 0.0f;
 		bool run_read = false;
+		uint16_t alarm_read = 0U;
 
-		if (temp_sp_id == 0 || run_cmd_id == 0)
+		if (temp_sp_id == 0 || run_cmd_id == 0 || hmi_temp_sp_id == 0 || hmi_alarm_code_id == 0)
 		{
 			rc = -1;
 		}
@@ -66,6 +69,40 @@ int main(void)
 		if (rc == 0)
 		{
 			printf("proc.run_cmd after write = %s\n", run_read ? "true" : "false");
+		}
+		if (rc == 0)
+		{
+			rc = tag_read_real(&rt, hmi_temp_sp_id, &temp_read);
+		}
+		if (rc == 0)
+		{
+			printf("hmi.temp_setpoint initial = %.2f\n", temp_read);
+			rc = tag_write_real(&rt, hmi_temp_sp_id, 30.0f);
+		}
+		if (rc == 0)
+		{
+			rc = tag_read_real(&rt, temp_sp_id, &temp_read);
+		}
+		if (rc == 0)
+		{
+			printf("proc.temp_sp after hmi write = %.2f\n", temp_read);
+			rc = tag_write_u16(&rt, hmi_alarm_code_id, 1234U);
+			if (rc == 0)
+			{
+				rc = -1;
+			}
+			else
+			{
+				rc = 0;
+			}
+		}
+		if (rc == 0)
+		{
+			rc = tag_read_u16(&rt, hmi_alarm_code_id, &alarm_read);
+		}
+		if (rc == 0)
+		{
+			printf("hmi.alarm_code after failed write = %u\n", alarm_read);
 		}
 	}
 

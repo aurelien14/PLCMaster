@@ -47,6 +47,24 @@ static const ProcessVarDesc_t kProcessVarDescs[] = {
     },
 };
 
+static const HmiTagDesc_t kHmiTagDescs[] = {
+    {
+        .name = "temp_setpoint",
+        .alias_of = "proc.temp_sp",
+        .access = HMI_RW,
+    },
+    {
+        .name = "run",
+        .alias_of = "proc.run_cmd",
+        .access = HMI_RW,
+    },
+    {
+        .name = "alarm_code",
+        .alias_of = "proc.alarm_code",
+        .access = HMI_RO,
+    },
+};
+
 static const SystemConfig_t kStaticConfig = {
     .backends = kBackendConfigs,
     .backend_count = sizeof(kBackendConfigs) / sizeof(kBackendConfigs[0]),
@@ -54,8 +72,8 @@ static const SystemConfig_t kStaticConfig = {
     .device_count = sizeof(kDeviceConfigs) / sizeof(kDeviceConfigs[0]),
     .process_vars = kProcessVarDescs,
     .process_var_count = sizeof(kProcessVarDescs) / sizeof(kProcessVarDescs[0]),
-    .hmi_tags = NULL,
-    .hmi_tag_count = 0,
+    .hmi_tags = kHmiTagDescs,
+    .hmi_tag_count = sizeof(kHmiTagDescs) / sizeof(kHmiTagDescs[0]),
 };
 
 const SystemConfig_t *get_static_config(void)
