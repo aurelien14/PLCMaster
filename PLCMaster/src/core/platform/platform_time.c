@@ -5,6 +5,7 @@
 #define WIN32_LEAN_AND_MEAN /* Exclude some conflicting definitions in windows header */
 #endif
 #include <windows.h>
+#include <mmsystem.h>
 #elif PLAT_LINUX
 #include <time.h>
 #endif
@@ -90,3 +91,43 @@ uint64_t plat_time_perf_freq(void)
 	return 0;
 #endif
 }
+
+#if PLAT_WINDOWS
+static LONG g_timer_res_refcount = 0;
+
+int plat_time_begin_timer_resolution_1ms(void)
+{
+	LONG prev = InterlockedIncrement(&g_timer_res_refcount);
+	if (prev == 1)
+	{
+		if (timeBeginPeriod(1) != TIMERR_NOERROR)
+		{
+			InterlockedDecrement(&g_timer_res_refcount);
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+int plat_time_end_timer_resolution_1ms(void)
+{
+	LONG prev = InterlockedDecrement(&g_timer_res_refcount);
+	if (prev == 0)
+	{
+		timeEndPeriod(1);
+	}
+
+	return 0;
+}
+#else
+int plat_time_begin_timer_resolution_1ms(void)
+{
+	return 0;
+}
+
+int plat_time_end_timer_resolution_1ms(void)
+{
+	return 0;
+}
+#endif
