@@ -12,10 +12,13 @@
 #include "core/tag/tag_api.h"
 #include "app/plc/plc_app.h"
 #include "core/plc/plc_scheduler.h"
-#include "app/plc/plc_tasks_demo.h"
 #include "app/config/config_static.h"
 #include "system/builder/system_builder.h"
 #include "backends/ethercat/ec_backend.h"
+#include "app/plc/plc_tasks_demo.h"
+#ifdef DEV
+#include "app/demo/demo_tag_io.h"
+#endif /* DEV */
 
 static void plc_cycle_end(void *user)
 {
@@ -90,93 +93,6 @@ int main(void)
 
 	if (rc == 0)
 	{
-		TagId_t temp_sp_id = tag_table_find_id(&rt.tag_table, "proc.temp_sp");
-		TagId_t run_cmd_id = tag_table_find_id(&rt.tag_table, "proc.run_cmd");
-		TagId_t hmi_temp_sp_id = tag_table_find_id(&rt.tag_table, "hmi.temp_setpoint");
-		TagId_t hmi_alarm_code_id = tag_table_find_id(&rt.tag_table, "hmi.alarm_code");
-		float temp_read = 0.0f;
-		bool run_read = false;
-		uint16_t alarm_read = 0U;
-		TagId_t io_in_id = tag_table_find_id(&rt.tag_table, "CPU_IO.X30_2_In0");
-		TagId_t io_out_id = tag_table_find_id(&rt.tag_table, "CPU_IO.X15_Out0");
-
-		if (temp_sp_id == 0 || run_cmd_id == 0 || hmi_temp_sp_id == 0 || hmi_alarm_code_id == 0)
-		{
-			rc = -1;
-		}
-		if (rc == 0 && (io_in_id == 0 || io_out_id == 0))
-		{
-			rc = -1;
-		}
-		if (rc == 0)
-		{
-			rc = tag_read_real(&rt, temp_sp_id, &temp_read);
-		}
-		if (rc == 0)
-		{
-			printf("proc.temp_sp initial = %.2f\n", temp_read);
-			rc = tag_write_real(&rt, temp_sp_id, 25.5f);
-		}
-		if (rc == 0)
-		{
-			rc = tag_read_real(&rt, temp_sp_id, &temp_read);
-		}
-		if (rc == 0)
-		{
-			printf("proc.temp_sp after write = %.2f\n", temp_read);
-			rc = tag_read_bool(&rt, run_cmd_id, &run_read);
-		}
-		if (rc == 0)
-		{
-			printf("proc.run_cmd initial = %s\n", run_read ? "true" : "false");
-			rc = tag_write_bool(&rt, run_cmd_id, true);
-		}
-		if (rc == 0)
-		{
-			rc = tag_read_bool(&rt, run_cmd_id, &run_read);
-		}
-		if (rc == 0)
-		{
-			printf("proc.run_cmd after write = %s\n", run_read ? "true" : "false");
-		}
-		if (rc == 0)
-		{
-			rc = tag_read_real(&rt, hmi_temp_sp_id, &temp_read);
-		}
-		if (rc == 0)
-		{
-			printf("hmi.temp_setpoint initial = %.2f\n", temp_read);
-			rc = tag_write_real(&rt, hmi_temp_sp_id, 30.0f);
-		}
-		if (rc == 0)
-		{
-			rc = tag_read_real(&rt, temp_sp_id, &temp_read);
-		}
-		if (rc == 0)
-		{
-			printf("proc.temp_sp after hmi write = %.2f\n", temp_read);
-			rc = tag_write_u16(&rt, hmi_alarm_code_id, 1234U);
-			if (rc == 0)
-			{
-				rc = -1;
-			}
-			else
-			{
-				rc = 0;
-			}
-		}
-		if (rc == 0)
-		{
-			rc = tag_read_u16(&rt, hmi_alarm_code_id, &alarm_read);
-		}
-		if (rc == 0)
-		{
-			printf("hmi.alarm_code after failed write = %u\n", alarm_read);
-		}
-	}
-
-	if (rc == 0)
-	{
 		rc = plc_scheduler_init(&sched, 10);
 	}
 
@@ -213,6 +129,13 @@ int main(void)
 			rc = plc_scheduler_add_task(&sched, &control_task);
 		}
 	}
+
+#ifdef DEV
+	if (rc == 0)
+	{
+		rc = demo_tag_io_run(&rt);
+	}
+#endif /* DEV */
 
 	if (rc == 0)
 	{
