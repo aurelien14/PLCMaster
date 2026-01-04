@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include "core/tag/tag_table.h"
+#include "backends/backend_iface.h"
 
 typedef union
 {
@@ -37,6 +38,8 @@ typedef struct Runtime
     ProcessStore_t proc_store;
     void* status_view;
     void* backends;
+    size_t backend_count;
+    struct BackendDriver backend_array[MAX_BACKENDS];
 } Runtime_t;
 
 int runtime_init(Runtime_t* rt);
