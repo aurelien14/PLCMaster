@@ -1,6 +1,6 @@
 /* Demo PLC tasks. */
 
-#include "plc/plc_tasks_demo.h"
+#include "app/plc/plc_tasks_demo.h"
 
 #include <stdio.h>
 

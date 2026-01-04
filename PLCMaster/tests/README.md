@@ -7,13 +7,12 @@ s'assemblent, un GCC récent suffit :
 ```sh
 mkdir -p build
 gcc -std=c11 \
-    -I./src/core/runtime \
-    -I./src/system/config \
+    -I./src \
     -I./src/system/builder \
     -o build/plc_runtime_stub \
     src/apps/plc_runtime/main.c \
     src/core/runtime/runtime.c \
-    src/system/config/config_static.c \
+    src/app/config/config_static.c \
     src/system/builder/system_builder.c
 ./build/plc_runtime_stub
 ```

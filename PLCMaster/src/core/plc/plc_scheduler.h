@@ -8,7 +8,7 @@
 
 #include "core/platform/platform_atomic.h"
 #include "core/platform/platform_thread.h"
-#include "plc/plc_task.h"
+#include "core/plc/plc_task.h"
 
 typedef struct
 {
