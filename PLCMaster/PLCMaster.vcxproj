@@ -139,7 +139,7 @@
   <ItemGroup>
     <ClCompile Include="src\main.c" />
     <ClCompile Include="src\backends\ethercat\ec_backend.c" />
-    <ClCompile Include="src\backends\ethercat\ethercat_minimal.c" />
+    <ClCompile Include="src\backends\ethercat\ec_soem_lifecycle.c" />
     <ClCompile Include="src\backends\modbus\mb_backend.c" />
     <ClCompile Include="src\backends\registry\backend_registry.c" />
     <ClCompile Include="src\core\platform\platform_thread.c" />
@@ -164,7 +164,7 @@
   <ItemGroup>
     <ClInclude Include="src\backends\backend_iface.h" />
     <ClInclude Include="src\backends\ethercat\ec_backend.h" />
-    <ClInclude Include="src\backends\ethercat\ethercat_minimal.h" />
+    <ClInclude Include="src\backends\ethercat\ec_soem_lifecycle.h" />
     <ClInclude Include="src\backends\modbus\mb_backend.h" />
     <ClInclude Include="src\backends\registry\backend_registry.h" />
     <ClInclude Include="src\core\platform\platform_atomic.h" />

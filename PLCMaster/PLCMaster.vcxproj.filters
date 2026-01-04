@@ -18,7 +18,7 @@
     <ClCompile Include="src\backends\ethercat\ec_backend.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="src\backends\ethercat\ethercat_minimal.c">
+    <ClCompile Include="src\backends\ethercat\ec_soem_lifecycle.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
     <ClCompile Include="src\main.c">
@@ -146,7 +146,7 @@
     <ClInclude Include="src\backends\ethercat\ec_backend.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="src\backends\ethercat\ethercat_minimal.h">
+    <ClInclude Include="src\backends\ethercat\ec_soem_lifecycle.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
     <ClInclude Include="src\backends\modbus\mb_backend.h">

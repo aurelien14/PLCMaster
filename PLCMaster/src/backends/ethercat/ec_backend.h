@@ -64,6 +64,5 @@ BackendDriver_t *ethercat_backend_create(const BackendConfig_t *cfg, size_t ioma
 void ethercat_backend_destroy(BackendDriver_t *driver);
 
 int ethercat_cycle_once(BackendDriver_t *driver);
-void print_available_adapters(void);
 
 #endif /* EC_BACKEND_H */
