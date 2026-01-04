@@ -6,30 +6,60 @@
 
 #if PLAT_WINDOWS
 #include <process.h>
+#include <mmsystem.h>
 
 struct thread_start
 {
 	plat_thread_fn fn;
 	void *arg;
-	PlatThreadClass_t cls;
-	PlatThreadRtParams_t rt;
+	PlatThreadExParams_t params;
 };
+
+static int plat_thread_apply_priority_windows(HANDLE handle, PlatThreadPriority_t priority)
+{
+	int native_prio = THREAD_PRIORITY_NORMAL;
+
+	if (priority == PLAT_THREAD_PRIORITY_LOW)
+	{
+		native_prio = THREAD_PRIORITY_BELOW_NORMAL;
+	}
+	else if (priority == PLAT_THREAD_PRIORITY_HIGH)
+	{
+		native_prio = THREAD_PRIORITY_HIGHEST;
+	}
+	else if (priority == PLAT_THREAD_PRIORITY_CRITICAL)
+	{
+		native_prio = THREAD_PRIORITY_TIME_CRITICAL;
+	}
+
+	return SetThreadPriority(handle, native_prio) ? 0 : -1;
+}
 
 static unsigned __stdcall plat_thread_entry(void *param)
 {
 	struct thread_start *ctx = (struct thread_start *)param;
 	plat_thread_fn entry_fn = ctx->fn;
 	void *entry_arg = ctx->arg;
-	int use_timer_res = (ctx->cls == PLAT_THREAD_RT && ctx->rt.timer_res_ms == 1);
+	PlatThreadExParams_t params = ctx->params;
 	int timer_res_acquired = 0;
+	UINT timer_period = (UINT)params.timer_resolution_ms;
 
-	if (use_timer_res)
+	if (timer_period > 0)
 	{
-		if (plat_time_begin_timer_resolution_1ms() == 0)
+		if ((timer_period == 1 && plat_time_begin_timer_resolution_1ms() == 0) ||
+		    (timer_period != 1 && timeBeginPeriod(timer_period) == TIMERR_NOERROR))
 		{
 			timer_res_acquired = 1;
 		}
 	}
+
+	if (params.affinity_cpu >= 0)
+	{
+		DWORD_PTR mask = ((DWORD_PTR)1) << params.affinity_cpu;
+		SetThreadAffinityMask(GetCurrentThread(), mask);
+	}
+
+	plat_thread_apply_priority_windows(GetCurrentThread(), params.priority);
 
 	free(ctx);
 	if (entry_fn)
@@ -39,7 +69,14 @@ static unsigned __stdcall plat_thread_entry(void *param)
 
 	if (timer_res_acquired)
 	{
-		plat_time_end_timer_resolution_1ms();
+		if (timer_period == 1)
+		{
+			plat_time_end_timer_resolution_1ms();
+		}
+		else
+		{
+			timeEndPeriod(timer_period);
+		}
 	}
 
 	return 0;
@@ -65,9 +102,9 @@ static int plat_thread_set_affinity(pthread_t thread, int cpu_index)
 	return pthread_setaffinity_np(thread, sizeof(cpu_set), &cpu_set);
 }
 
-static int plat_thread_setup_sched(const PlatThreadRtParams_t *rt_params, pthread_attr_t *attr)
+static int plat_thread_setup_sched(const PlatThreadExParams_t *params, pthread_attr_t *attr)
 {
-	if (rt_params->priority_level <= 0)
+	if (params->cls != PLAT_THREAD_RT)
 	{
 		return 0;
 	}
@@ -76,12 +113,20 @@ static int plat_thread_setup_sched(const PlatThreadRtParams_t *rt_params, pthrea
 	int min_prio = sched_get_priority_min(SCHED_FIFO);
 	if (max_prio == -1 || min_prio == -1)
 	{
-		fprintf(stderr, "plat_thread_create: unable to query SCHED_FIFO range\n");
+		fprintf(stderr, "plat_thread_create_ex: unable to query SCHED_FIFO range\n");
 		return -1;
 	}
 
 	int desired_prio = max_prio;
-	if (rt_params->priority_level == 1 && max_prio > min_prio)
+	if (params->priority == PLAT_THREAD_PRIORITY_LOW)
+	{
+		desired_prio = min_prio;
+	}
+	else if (params->priority == PLAT_THREAD_PRIORITY_NORMAL)
+	{
+		desired_prio = min_prio + (max_prio - min_prio) / 2;
+	}
+	else if (params->priority == PLAT_THREAD_PRIORITY_HIGH && max_prio > min_prio)
 	{
 		desired_prio = max_prio - 1;
 	}
@@ -110,25 +155,26 @@ static int plat_thread_setup_sched(const PlatThreadRtParams_t *rt_params, pthrea
 }
 #endif
 
-static void plat_thread_rt_defaults(PlatThreadRtParams_t *rt_params)
+static void plat_thread_ex_defaults(PlatThreadExParams_t *params)
 {
-	rt_params->priority_level = 0;
-	rt_params->affinity_cpu = -1;
-	rt_params->timer_res_ms = 0;
-	rt_params->stack_size = 0;
+	params->cls = PLAT_THREAD_NORMAL;
+	params->priority = PLAT_THREAD_PRIORITY_NORMAL;
+	params->affinity_cpu = -1;
+	params->timer_resolution_ms = 0;
+	params->stack_size = 0;
 }
 
-int plat_thread_create(plat_thread_t *t, PlatThreadClass_t cls, const PlatThreadRtParams_t *rt, plat_thread_fn fn, void *arg)
+int plat_thread_create_ex(plat_thread_t *t, plat_thread_fn fn, void *arg, const PlatThreadExParams_t *params)
 {
 #if PLAT_WINDOWS
-	PlatThreadRtParams_t local_rt;
-	if (rt)
+	PlatThreadExParams_t local_params;
+	if (params)
 	{
-		local_rt = *rt;
+		local_params = *params;
 	}
 	else
 	{
-		plat_thread_rt_defaults(&local_rt);
+		plat_thread_ex_defaults(&local_params);
 	}
 
 	struct thread_start *ctx = (struct thread_start *)malloc(sizeof(*ctx));
@@ -139,13 +185,12 @@ int plat_thread_create(plat_thread_t *t, PlatThreadClass_t cls, const PlatThread
 
 	ctx->fn = fn;
 	ctx->arg = arg;
-	ctx->cls = cls;
-	ctx->rt = local_rt;
+	ctx->params = local_params;
 
 	unsigned thread_id = 0;
 	unsigned init_flags = 0;
 
-	t->handle = (HANDLE)_beginthreadex(NULL, (unsigned)local_rt.stack_size, plat_thread_entry, ctx, init_flags, &thread_id);
+	t->handle = (HANDLE)_beginthreadex(NULL, (unsigned)local_params.stack_size, plat_thread_entry, ctx, init_flags, &thread_id);
 	if (t->handle == NULL)
 	{
 		free(ctx);
@@ -154,34 +199,16 @@ int plat_thread_create(plat_thread_t *t, PlatThreadClass_t cls, const PlatThread
 
 	t->tid = (DWORD)thread_id;
 
-	if (cls == PLAT_THREAD_RT)
-	{
-		if (local_rt.priority_level == 1)
-		{
-			SetThreadPriority(t->handle, THREAD_PRIORITY_HIGHEST);
-		}
-		else if (local_rt.priority_level == 2)
-		{
-			SetThreadPriority(t->handle, THREAD_PRIORITY_TIME_CRITICAL);
-		}
-
-		if (local_rt.affinity_cpu >= 0)
-		{
-			DWORD_PTR mask = ((DWORD_PTR)1) << local_rt.affinity_cpu;
-			SetThreadAffinityMask(t->handle, mask);
-		}
-	}
-
 	return 0;
 #elif PLAT_LINUX
-	PlatThreadRtParams_t local_rt;
-	if (rt)
+	PlatThreadExParams_t local_params;
+	if (params)
 	{
-		local_rt = *rt;
+		local_params = *params;
 	}
 	else
 	{
-		plat_thread_rt_defaults(&local_rt);
+		plat_thread_ex_defaults(&local_params);
 	}
 
 	pthread_attr_t attr;
@@ -189,17 +216,14 @@ int plat_thread_create(plat_thread_t *t, PlatThreadClass_t cls, const PlatThread
 	if (pthread_attr_init(&attr) == 0)
 	{
 		have_attr = 1;
-		if (local_rt.stack_size > 0)
+		if (local_params.stack_size > 0)
 		{
-			pthread_attr_setstacksize(&attr, local_rt.stack_size);
+			pthread_attr_setstacksize(&attr, local_params.stack_size);
 		}
 
-		if (cls == PLAT_THREAD_RT)
+		if (plat_thread_setup_sched(&local_params, &attr) != 0)
 		{
-			if (plat_thread_setup_sched(&local_rt, &attr) != 0)
-			{
-				/* continue with default scheduling */
-			}
+			/* continue with default scheduling */
 		}
 	}
 
@@ -215,24 +239,48 @@ int plat_thread_create(plat_thread_t *t, PlatThreadClass_t cls, const PlatThread
 		return rc;
 	}
 
-	if (cls == PLAT_THREAD_RT && local_rt.affinity_cpu >= 0)
+	if (local_params.affinity_cpu >= 0)
 	{
-		int aff_rc = plat_thread_set_affinity(t->thread, local_rt.affinity_cpu);
+		int aff_rc = plat_thread_set_affinity(t->thread, local_params.affinity_cpu);
 		if (aff_rc != 0)
 		{
-			fprintf(stderr, "plat_thread_create: pthread_setaffinity_np failed (%d)\n", aff_rc);
+			fprintf(stderr, "plat_thread_create_ex: pthread_setaffinity_np failed (%d)\n", aff_rc);
 		}
 	}
 
 	return 0;
 #else
 	PLAT_UNUSED(t);
-	PLAT_UNUSED(cls);
-	PLAT_UNUSED(rt);
+	PLAT_UNUSED(params);
 	PLAT_UNUSED(fn);
 	PLAT_UNUSED(arg);
 	return -1;
 #endif
+}
+
+int plat_thread_create(plat_thread_t *t, PlatThreadClass_t cls, const PlatThreadRtParams_t *rt, plat_thread_fn fn, void *arg)
+{
+	PlatThreadExParams_t params;
+	plat_thread_ex_defaults(&params);
+	params.cls = cls;
+
+	if (rt)
+	{
+		params.affinity_cpu = rt->affinity_cpu;
+		params.timer_resolution_ms = (uint32_t)((rt->timer_res_ms > 0) ? rt->timer_res_ms : 0);
+		params.stack_size = rt->stack_size;
+
+		if (rt->priority_level == 1)
+		{
+			params.priority = PLAT_THREAD_PRIORITY_HIGH;
+		}
+		else if (rt->priority_level >= 2)
+		{
+			params.priority = PLAT_THREAD_PRIORITY_CRITICAL;
+		}
+	}
+
+	return plat_thread_create_ex(t, fn, arg, &params);
 }
 
 int plat_thread_join(plat_thread_t *t)

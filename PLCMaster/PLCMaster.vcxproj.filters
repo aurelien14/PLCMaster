@@ -66,6 +66,9 @@
     <ClCompile Include="src\core\platform\platform_thread.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\platform\platform_mem.c">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
     <ClCompile Include="src\core\platform\platform_time.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
@@ -135,6 +138,9 @@
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
     <ClInclude Include="src\core\platform\platform_atomic.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\platform\platform_mem.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
     <ClInclude Include="src\core\platform\platform_thread.h">

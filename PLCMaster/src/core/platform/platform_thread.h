@@ -23,6 +23,14 @@ typedef enum
 	PLAT_THREAD_RT = 1
 } PlatThreadClass_t;
 
+typedef enum
+{
+	PLAT_THREAD_PRIORITY_LOW = -1,
+	PLAT_THREAD_PRIORITY_NORMAL = 0,
+	PLAT_THREAD_PRIORITY_HIGH = 1,
+	PLAT_THREAD_PRIORITY_CRITICAL = 2
+} PlatThreadPriority_t;
+
 typedef struct
 {
 	int priority_level; /* 0=default, 1=high, 2=time_critical */
@@ -30,6 +38,15 @@ typedef struct
 	int timer_res_ms;   /* 0=none, 1=request 1ms (Windows only) */
 	size_t stack_size;  /* 0=default */
 } PlatThreadRtParams_t;
+
+typedef struct
+{
+	PlatThreadClass_t cls;
+	PlatThreadPriority_t priority;
+	int affinity_cpu;          /* -1 = none, otherwise CPU index */
+	uint32_t timer_resolution_ms;
+	size_t stack_size;         /* 0=default */
+} PlatThreadExParams_t;
 
 typedef struct plat_thread
 {
@@ -43,6 +60,7 @@ typedef struct plat_thread
 #endif
 } plat_thread_t;
 
+int plat_thread_create_ex(plat_thread_t *t, plat_thread_fn fn, void *arg, const PlatThreadExParams_t *params);
 int plat_thread_create(plat_thread_t *t, PlatThreadClass_t cls, const PlatThreadRtParams_t *rt, plat_thread_fn fn, void *arg);
 int plat_thread_join(plat_thread_t *t);
 void plat_thread_sleep_ms(uint32_t ms);
