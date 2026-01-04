@@ -4,9 +4,12 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "core/platform/platform_thread.h"
 #include "core/runtime/runtime.h"
 #include "core/tag/tag_api.h"
 #include "plc/plc_app.h"
+#include "plc/plc_scheduler.h"
+#include "plc/plc_tasks_demo.h"
 #include "system/config/config_static.h"
 #include "system/builder/system_builder.h"
 
@@ -14,7 +17,13 @@ int main(void)
 {
 	Runtime_t rt;
 	PlcApp_t app;
+	PlcScheduler_t sched;
+	PlcDemoBlinkCtx_t blink_ctx;
+	PlcDemoControlCtx_t control_ctx;
+	memset(&sched, 0, sizeof(sched));
 	memset(&app, 0, sizeof(app));
+	memset(&blink_ctx, 0, sizeof(blink_ctx));
+	memset(&control_ctx, 0, sizeof(control_ctx));
 	runtime_init(&rt);
 
 	const SystemConfig_t *cfg = get_static_config();
@@ -103,6 +112,54 @@ int main(void)
 		if (rc == 0)
 		{
 			printf("hmi.alarm_code after failed write = %u\n", alarm_read);
+		}
+	}
+
+	if (rc == 0)
+	{
+		rc = plc_scheduler_init(&sched, 10);
+	}
+
+	if (rc == 0)
+	{
+		PlcTask_t blink_task = {
+			.name = "blink",
+			.fn = plc_demo_task_blink,
+			.ctx = &blink_ctx,
+			.period_ms = 200,
+			.phase_ms = 0,
+			.last_run_ms = 0,
+		};
+		PlcTask_t control_task = {
+			.name = "control",
+			.fn = plc_demo_task_control,
+			.ctx = &control_ctx,
+			.period_ms = 1000,
+			.phase_ms = 0,
+			.last_run_ms = 0,
+		};
+
+		control_ctx.runtime = &rt;
+		control_ctx.temp_sp_id = tag_table_find_id(&rt.tag_table, "proc.temp_sp");
+
+		rc = plc_scheduler_add_task(&sched, &blink_task);
+		if (rc == 0)
+		{
+			rc = plc_scheduler_add_task(&sched, &control_task);
+		}
+	}
+
+	if (rc == 0)
+	{
+		rc = plc_scheduler_start(&sched);
+	}
+
+	if (rc == 0)
+	{
+		plat_thread_sleep_ms(3000);
+		if (plc_scheduler_stop(&sched) != 0)
+		{
+			rc = -1;
 		}
 	}
 
