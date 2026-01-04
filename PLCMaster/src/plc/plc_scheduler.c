@@ -20,6 +20,9 @@ int plc_scheduler_init(PlcScheduler_t* s, uint32_t base_cycle_ms)
 	s->base_cycle_ms = base_cycle_ms;
 	s->task_count = 0;
 	plat_atomic_store_bool(&s->running, false);
+	s->on_cycle_begin = NULL;
+	s->on_cycle_end = NULL;
+	s->user = NULL;
 	memset(&s->thread, 0, sizeof(s->thread));
 	return 0;
 }
@@ -44,6 +47,19 @@ int plc_scheduler_add_task(PlcScheduler_t* s, const PlcTask_t* task)
 	s->tasks[s->task_count] = *task;
 	s->tasks[s->task_count].last_run_ms = 0;
 	s->task_count++;
+	return 0;
+}
+
+int plc_scheduler_set_callbacks(PlcScheduler_t* s, void (*on_cycle_begin)(void *user), void (*on_cycle_end)(void *user), void *user)
+{
+	if (s == NULL || plat_atomic_load_bool(&s->running))
+	{
+		return -1;
+	}
+
+	s->on_cycle_begin = on_cycle_begin;
+	s->on_cycle_end = on_cycle_end;
+	s->user = user;
 	return 0;
 }
 
@@ -143,6 +159,11 @@ static void *plc_scheduler_thread(void *arg)
 			printf("[PLC] overrun %" PRIu64 "ms\n", now_ms - next_tick_ms);
 		}
 
+		if (s->on_cycle_begin != NULL)
+		{
+			s->on_cycle_begin(s->user);
+		}
+
 		for (i = 0; i < s->task_count; ++i)
 		{
 			PlcTask_t* task = &s->tasks[i];
@@ -163,6 +184,11 @@ static void *plc_scheduler_thread(void *arg)
 					printf("[PLC] task %s rc=%d\n", task->name ? task->name : "(null)", rc);
 				}
 			}
+		}
+
+		if (s->on_cycle_end != NULL)
+		{
+			s->on_cycle_end(s->user);
 		}
 
 		next_tick_ms += s->base_cycle_ms;

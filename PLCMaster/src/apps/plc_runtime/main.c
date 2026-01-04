@@ -1,11 +1,13 @@
 /* PLC runtime entry point. TODO: wire runtime components together. */
 
 #include <stdbool.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "core/platform/platform_thread.h"
+#include "core/platform/platform_atomic.h"
 #include "core/runtime/runtime.h"
 #include "core/tag/tag_api.h"
 #include "plc/plc_app.h"
@@ -13,6 +15,57 @@
 #include "plc/plc_tasks_demo.h"
 #include "system/config/config_static.h"
 #include "system/builder/system_builder.h"
+#include "backends/ethercat/ec_backend.h"
+
+static void plc_cycle_end(void *user)
+{
+	Runtime_t *rt = (Runtime_t *)user;
+
+	if (rt == NULL)
+	{
+		return;
+	}
+
+	runtime_backends_sync_outputs(rt);
+}
+
+static void log_ethercat_debug(const BackendDriver_t *drv)
+{
+	EthercatDriver_t *impl;
+
+	if (drv == NULL || drv->type != BACKEND_TYPE_ETHERCAT || drv->impl == NULL)
+	{
+		return;
+	}
+
+	impl = (EthercatDriver_t *)drv->impl;
+
+	printf("[EC] last_wkc=%d in_op=%s fault_latched=%d rt_overruns=%" PRIu64 " jitter_max_ns=%" PRIi64 "\n",
+		plat_atomic_load_i32(&impl->last_wkc),
+		plat_atomic_load_bool(&impl->in_op) ? "true" : "false",
+		plat_atomic_load_i32(&impl->fault_latched),
+		plat_atomic_load_u64(&impl->rt_overruns),
+		plat_atomic_load_i64(&impl->rt_jitter_max_ns));
+}
+
+static void log_backend_debug(const Runtime_t *rt)
+{
+	size_t i;
+
+	if (rt == NULL || rt->backends == NULL)
+	{
+		return;
+	}
+
+	for (i = 0; i < rt->backend_count; ++i)
+	{
+		const BackendDriver_t *drv = &rt->backends[i];
+		if (drv->type == BACKEND_TYPE_ETHERCAT)
+		{
+			log_ethercat_debug(drv);
+		}
+	}
+}
 
 int main(void)
 {
@@ -129,6 +182,11 @@ int main(void)
 
 	if (rc == 0)
 	{
+		rc = plc_scheduler_set_callbacks(&sched, NULL, plc_cycle_end, &rt);
+	}
+
+	if (rc == 0)
+	{
 		PlcTask_t blink_task = {
 			.name = "blink",
 			.fn = plc_demo_task_blink,
@@ -163,7 +221,14 @@ int main(void)
 
 	if (rc == 0)
 	{
-		plat_thread_sleep_ms(3000);
+		uint32_t elapsed_ms = 0;
+
+		while (elapsed_ms < 3000)
+		{
+			log_backend_debug(&rt);
+			plat_thread_sleep_ms(1000);
+			elapsed_ms += 1000;
+		}
 		if (plc_scheduler_stop(&sched) != 0)
 		{
 			rc = -1;
