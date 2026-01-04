@@ -139,6 +139,7 @@
   <ItemGroup>
     <ClCompile Include="src\apps\plc_runtime\main.c" />
     <ClCompile Include="src\backends\ethercat\ec_backend.c" />
+    <ClCompile Include="src\backends\ethercat\ethercat_minimal.c" />
     <ClCompile Include="src\backends\modbus\mb_backend.c" />
     <ClCompile Include="src\core\platform\platform_thread.c" />
     <ClCompile Include="src\core\platform\platform_time.c" />
@@ -158,6 +159,7 @@
   <ItemGroup>
     <ClInclude Include="src\backends\backend_iface.h" />
     <ClInclude Include="src\backends\ethercat\ec_backend.h" />
+    <ClInclude Include="src\backends\ethercat\ethercat_minimal.h" />
     <ClInclude Include="src\backends\modbus\mb_backend.h" />
     <ClInclude Include="src\core\platform\platform_atomic.h" />
     <ClInclude Include="src\core\platform\platform_detect.h" />
