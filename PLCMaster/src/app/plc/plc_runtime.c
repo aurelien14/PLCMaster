@@ -10,10 +10,6 @@
 #include "backends/ethercat/ec_backend.h"
 #include "app/plc/plc_runtime.h"
 
-#ifdef DEV
-#include "app/demo/demo_tag_io.h"
-#endif /* DEV */
-
 static void log_ethercat_debug(const BackendDriver_t *drv)
 {
 	EthercatDriver_t *impl;
@@ -60,14 +56,6 @@ int plc_runtime_run(Runtime_t *rt, PlcScheduler_t *sched)
 	{
 		return -1;
 	}
-
-#ifdef DEV
-	rc = demo_tag_io_run(rt);
-	if (rc != 0)
-	{
-		return rc;
-	}
-#endif /* DEV */
 
 	rc = plc_scheduler_start(sched);
 
