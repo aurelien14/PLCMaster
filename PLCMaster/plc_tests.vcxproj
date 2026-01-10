@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{3294e1cb-e1c1-4ddf-beaf-c125a037e139}</ProjectGuid>
-    <RootNamespace>PLCMaster</RootNamespace>
+    <ProjectGuid>{A1CB4CE8-A042-44D7-AA72-FC2C1AABE1E6}</ProjectGuid>
+    <RootNamespace>PLCMasterTests</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -53,10 +53,8 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings">
-  </ImportGroup>
-  <ImportGroup Label="Shared">
-  </ImportGroup>
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -70,13 +68,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)src;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\build\default\include;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\include;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\osal;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\osal\win32;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\oshw\win32;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\oshw\win32\wpcap\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\build\default\Debug;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\oshw\win32\wpcap\Lib\x64;$(LibraryPath)</LibraryPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)src;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\build\default\include;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\include;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\osal;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\osal\win32;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\oshw\win32;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\oshw\win32\wpcap\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\build\default\Release;C:\Users\sapratin\Documents\c_projects\lib\SOEM_master\oshw\win32\wpcap\Lib\x64;$(LibraryPath)</LibraryPath>
+  <PropertyGroup>
+    <IncludePath>$(ProjectDir)src;$(ProjectDir)tests;$(IncludePath)</IncludePath>
+    <TargetName>plc_tests</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -117,7 +111,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>soem.lib;kernel32.lib;Packet.lib;wpcap.lib;winmm.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -133,66 +127,25 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>soem.lib;kernel32.lib;Packet.lib;wpcap.lib;winmm.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\main.c" />
-    <ClCompile Include="src\backends\ethercat\ec_backend.c" />
-    <ClCompile Include="src\backends\ethercat\ec_soem_lifecycle.c" />
-    <ClCompile Include="src\backends\modbus\mb_backend.c" />
-    <ClCompile Include="src\backends\registry\backend_registry.c" />
+    <ClCompile Include="tests\platform_test.c" />
     <ClCompile Include="src\core\platform\platform_thread.c" />
-    <ClCompile Include="src\core\platform\platform_mem.c" />
     <ClCompile Include="src\core\platform\platform_time.c" />
-    <ClCompile Include="src\core\runtime\runtime.c" />
-    <ClCompile Include="src\core\rt\rt_time.c" />
-    <ClCompile Include="src\core\status\status_tags.c" />
-    <ClCompile Include="src\core\tag\tag_api.c" />
-    <ClCompile Include="src\core\tag\tag_table.c" />
-    <ClCompile Include="src\devices\l230\l230_desc.c" />
-    <ClCompile Include="src\devices\registry\device_registry.c" />
-    <ClCompile Include="src\app\app.c" />
-    <ClCompile Include="src\app\plc\plc_app.c" />
-    <ClCompile Include="src\app\plc\plc_tasks.c" />
-    <ClCompile Include="src\app\plc\plc_runtime.c" />
-    <ClCompile Include="src\core\plc\plc_scheduler.c" />
-    <ClCompile Include="src\system\builder\system_builder.c" />
-    <ClCompile Include="src\app\config\config_static.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\backends\backend_iface.h" />
-    <ClInclude Include="src\backends\ethercat\ec_backend.h" />
-    <ClInclude Include="src\backends\ethercat\ec_soem_lifecycle.h" />
-    <ClInclude Include="src\backends\modbus\mb_backend.h" />
-    <ClInclude Include="src\backends\registry\backend_registry.h" />
     <ClInclude Include="src\core\platform\platform_atomic.h" />
     <ClInclude Include="src\core\platform\platform_detect.h" />
-    <ClInclude Include="src\core\platform\platform_mem.h" />
     <ClInclude Include="src\core\platform\platform_thread.h" />
     <ClInclude Include="src\core\platform\platform_time.h" />
-    <ClInclude Include="src\core\runtime\runtime.h" />
-    <ClInclude Include="src\core\rt\rt_time.h" />
-    <ClInclude Include="src\core\status\status_tags.h" />
-    <ClInclude Include="src\core\tag\tag_api.h" />
-    <ClInclude Include="src\core\tag\tag_table.h" />
-    <ClInclude Include="src\devices\device_desc.h" />
-    <ClInclude Include="src\devices\l230\l230_desc.h" />
-    <ClInclude Include="src\devices\registry\device_registry.h" />
-    <ClInclude Include="src\app\app.h" />
-    <ClInclude Include="src\app\io\io_view.h" />
-    <ClInclude Include="src\app\plc\plc_app.h" />
-    <ClInclude Include="src\app\plc\plc_tasks.h" />
-    <ClInclude Include="src\app\plc\plc_runtime.h" />
-    <ClInclude Include="src\core\plc\plc_scheduler.h" />
-    <ClInclude Include="src\core\plc\plc_task.h" />
-    <ClInclude Include="src\system\builder\system_builder.h" />
-    <ClInclude Include="src\app\config\config_static.h" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="tests\README.md" />
-  </ItemGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-  </ImportGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" Condition="'$(PLC_ENABLE_TESTS)'=='ON'" />
+  <ImportGroup Label="ExtensionTargets" />
+  <Target Name="Build" Condition="'$(PLC_ENABLE_TESTS)'!='ON'">
+    <Message Text="PLC_ENABLE_TESTS is OFF; plc_tests will not be built." Importance="high" />
+  </Target>
+  <Target Name="Clean" Condition="'$(PLC_ENABLE_TESTS)'!='ON'" />
+  <Target Name="Rebuild" DependsOnTargets="Clean;Build" Condition="'$(PLC_ENABLE_TESTS)'!='ON'" />
 </Project>

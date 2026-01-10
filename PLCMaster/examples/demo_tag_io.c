@@ -2,7 +2,7 @@
 
 #ifdef DEV
 
-#include "app/demo/demo_tag_io.h"
+#include "examples/demo_tag_io.h"
 
 #include <stdbool.h>
 #include <stdio.h>
