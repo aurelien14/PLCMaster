@@ -23,12 +23,19 @@ static void plc_cycle_end(void *user)
 int main(void)
 {
 	Runtime_t rt;
+	PlcApp_t app;
 	PlcScheduler_t sched;
 	memset(&sched, 0, sizeof(sched));
 	runtime_init(&rt);
+	memset(&app, 0, sizeof(app));
 
 	const SystemConfig_t *cfg = app_get_config();
 	int rc = system_build(&rt, cfg);
+
+	if (rc == 0)
+	{
+		rc = app_bind(&app, &rt);
+	}
 
 	if (rc == 0)
 	{
@@ -42,7 +49,7 @@ int main(void)
 
 	if (rc == 0)
 	{
-		rc = app_register_plc_tasks(&sched, &rt);
+		rc = app_register_tasks(&sched, &rt);
 	}
 
 	if (rc == 0)
