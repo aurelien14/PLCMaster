@@ -40,6 +40,25 @@ void runtime_deinit(Runtime_t* rt)
 	memset(rt->backend_array, 0, sizeof(rt->backend_array));
 }
 
+void runtime_backends_cycle_begin(Runtime_t* rt)
+{
+	size_t i;
+
+	if (rt == NULL || rt->backends == NULL)
+	{
+		return;
+	}
+
+	for (i = 0; i < rt->backend_count; ++i)
+	{
+		BackendDriver_t *drv = &rt->backends[i];
+		if (drv->ops != NULL && drv->ops->cycle_begin != NULL)
+		{
+			drv->ops->cycle_begin(drv);
+		}
+	}
+}
+
 void runtime_backends_sync_outputs(Runtime_t* rt)
 {
 	size_t i;
@@ -52,7 +71,15 @@ void runtime_backends_sync_outputs(Runtime_t* rt)
 	for (i = 0; i < rt->backend_count; ++i)
 	{
 		BackendDriver_t *drv = &rt->backends[i];
-		if (drv->ops != NULL && drv->ops->sync != NULL)
+		if (drv->ops == NULL)
+		{
+			continue;
+		}
+		if (drv->ops->cycle_commit != NULL)
+		{
+			drv->ops->cycle_commit(drv);
+		}
+		else if (drv->ops->sync != NULL)
 		{
 			drv->ops->sync(drv);
 		}

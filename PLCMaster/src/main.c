@@ -20,6 +20,18 @@ static void plc_cycle_end(void *user)
 	runtime_backends_sync_outputs(rt);
 }
 
+static void plc_cycle_begin(void *user)
+{
+	Runtime_t *rt = (Runtime_t *)user;
+
+	if (rt == NULL)
+	{
+		return;
+	}
+
+	runtime_backends_cycle_begin(rt);
+}
+
 int main(void)
 {
 	Runtime_t rt;
@@ -44,7 +56,7 @@ int main(void)
 
 	if (rc == 0)
 	{
-		rc = plc_scheduler_set_callbacks(&sched, NULL, plc_cycle_end, &rt);
+		rc = plc_scheduler_set_callbacks(&sched, plc_cycle_begin, plc_cycle_end, &rt);
 	}
 
 	if (rc == 0)
