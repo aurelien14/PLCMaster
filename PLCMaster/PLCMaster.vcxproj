@@ -154,6 +154,7 @@
     <ClCompile Include="src\devices\registry\device_registry.c" />
     <ClCompile Include="src\app\app.c" />
     <ClCompile Include="src\app\plc\plc_app.c" />
+    <ClCompile Include="src\app\plc\plc_tasks.c" />
     <ClCompile Include="src\app\plc\plc_runtime.c" />
     <ClCompile Include="src\core\plc\plc_scheduler.c" />
     <ClCompile Include="src\system\builder\system_builder.c" />
@@ -182,6 +183,7 @@
     <ClInclude Include="src\app\app.h" />
     <ClInclude Include="src\app\io\io_view.h" />
     <ClInclude Include="src\app\plc\plc_app.h" />
+    <ClInclude Include="src\app\plc\plc_tasks.h" />
     <ClInclude Include="src\app\plc\plc_runtime.h" />
     <ClInclude Include="src\core\plc\plc_scheduler.h" />
     <ClInclude Include="src\core\plc\plc_task.h" />

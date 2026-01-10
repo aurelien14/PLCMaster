@@ -9,7 +9,6 @@
 
 #include "backends/backend_iface.h"
 #include "app/plc/plc_app.h"
-#include "core/plc/plc_task.h"
 #include "core/runtime/runtime.h"
 #include "core/platform/platform_thread.h"
 #include "devices/device_desc.h"
@@ -69,25 +68,12 @@ typedef struct HmiTagDesc
 	HmiAccess_t access;	/* RO/RW */
 } HmiTagDesc_t;
 
-typedef void *(*plc_task_ctx_create_fn)(Runtime_t *rt, PlcApp_t *app);
-
-typedef struct PlcTaskConfig
-{
-	const char *name;
-	uint32_t period_ms;
-	plc_task_fn fn;
-	plc_task_ctx_create_fn create_ctx;
-	void *ctx;
-} PlcTaskConfig_t;
-
 typedef struct SystemConfig
 {
 	const BackendConfig_t *backends;
 	size_t backend_count;
 	const DeviceConfig_t *devices;
 	size_t device_count;
-	const PlcTaskConfig_t *tasks;
-	size_t task_count;
 	const ProcessVarDesc_t *process_vars;
 	size_t process_var_count;
 	const HmiTagDesc_t *hmi_tags;

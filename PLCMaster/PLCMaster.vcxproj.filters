@@ -51,6 +51,9 @@
     <ClCompile Include="src\app\plc\plc_app.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
+    <ClCompile Include="src\app\plc\plc_tasks.c">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
     <ClCompile Include="src\core\plc\plc_scheduler.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
@@ -117,6 +120,9 @@
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
     <ClInclude Include="src\app\plc\plc_app.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="src\app\plc\plc_tasks.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
     <ClInclude Include="src\app\plc\plc_runtime.h">
