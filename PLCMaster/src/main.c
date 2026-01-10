@@ -49,7 +49,7 @@ int main(void)
 
 	if (rc == 0)
 	{
-		rc = app_register_tasks(&sched, &rt);
+		rc = app_register_tasks(&sched, &rt, &app);
 	}
 
 	if (rc == 0)
