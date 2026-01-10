@@ -33,14 +33,14 @@ int tag_table_add(TagTable_t *t, const TagEntry_t *e)
 	TagEntry_t *dest;
 	int rc;
 
-	if (t == NULL || e == NULL || e->full_name[0] == '\0')
+	if (t == NULL || e == NULL || e->full_name == NULL || e->full_name[0] == '\0')
 	{
 		return -1;
 	}
 
 	for (i = 0; i < t->count; ++i)
 	{
-		if (strncmp(t->entries[i].full_name, e->full_name, sizeof(t->entries[i].full_name)) == 0)
+		if (t->entries[i].full_name != NULL && strcmp(t->entries[i].full_name, e->full_name) == 0)
 		{
 			return -1;
 		}
@@ -54,29 +54,17 @@ int tag_table_add(TagTable_t *t, const TagEntry_t *e)
 	dest = &t->entries[t->count];
 	memset(dest, 0, sizeof(*dest));
 
-	rc = snprintf(dest->full_name, sizeof(dest->full_name), "%s", e->full_name);
-	if (rc < 0 || (size_t)rc >= sizeof(dest->full_name))
+	rc = snprintf(dest->full_name_storage, sizeof(dest->full_name_storage), "%s", e->full_name);
+	if (rc < 0 || (size_t)rc >= sizeof(dest->full_name_storage))
 	{
 		memset(dest, 0, sizeof(*dest));
 		return -1;
 	}
 
-	rc = snprintf(dest->backend_name, sizeof(dest->backend_name), "%s", e->backend_name);
-	if (rc < 0 || (size_t)rc >= sizeof(dest->backend_name))
-	{
-		memset(dest, 0, sizeof(*dest));
-		return -1;
-	}
-
+	dest->full_name = dest->full_name_storage;
 	dest->type = e->type;
-	dest->dir = e->dir;
-	dest->offset_byte = e->offset_byte;
-	dest->bit_index = e->bit_index;
-	dest->device_cfg = e->device_cfg;
 	dest->kind = e->kind;
-	dest->proc_index = e->proc_index;
-	dest->alias_target = e->alias_target;
-	dest->hmi_access = e->hmi_access;
+	dest->ref = e->ref;
 
 	t->count++;
 	return 0;
@@ -93,7 +81,7 @@ TagId_t tag_table_find_id(const TagTable_t *t, const char *full_name)
 
 	for (i = 0; i < t->count; ++i)
 	{
-		if (strncmp(t->entries[i].full_name, full_name, sizeof(t->entries[i].full_name)) == 0)
+		if (t->entries[i].full_name != NULL && strcmp(t->entries[i].full_name, full_name) == 0)
 		{
 			return (TagId_t)(i + 1U);
 		}

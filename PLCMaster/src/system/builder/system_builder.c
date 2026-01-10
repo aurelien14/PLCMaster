@@ -11,6 +11,55 @@
 #include <stdio.h>
 #include <string.h>
 
+static int find_backend_index(const SystemConfig_t *config, const char *backend_name, uint16_t *out_index)
+{
+	size_t index;
+
+	if (config == NULL || backend_name == NULL || out_index == NULL)
+	{
+		return -1;
+	}
+
+	for (index = 0; index < config->backend_count; ++index)
+	{
+		const BackendConfig_t *backend_cfg = &config->backends[index];
+		if (backend_cfg->name != NULL && strcmp(backend_cfg->name, backend_name) == 0)
+		{
+			*out_index = (uint16_t)index;
+			return 0;
+		}
+	}
+
+	return -1;
+}
+
+static int find_backend_device_index(const SystemConfig_t *config, size_t device_index, const char *backend_name, uint16_t *out_index)
+{
+	size_t index;
+	uint16_t count = 0;
+
+	if (config == NULL || backend_name == NULL || out_index == NULL)
+	{
+		return -1;
+	}
+
+	for (index = 0; index < config->device_count; ++index)
+	{
+		const DeviceConfig_t *device_cfg = &config->devices[index];
+		if (device_cfg->backend != NULL && strcmp(device_cfg->backend, backend_name) == 0)
+		{
+			if (index == device_index)
+			{
+				*out_index = count;
+				return 0;
+			}
+			++count;
+		}
+	}
+
+	return -1;
+}
+
 static void cleanup_backends(Runtime_t *rt)
 {
 	size_t idx;
@@ -173,22 +222,15 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 			ProcValue_t *value_slot;
 
 			memset(&entry, 0, sizeof(entry));
-			rc = snprintf(entry.full_name, sizeof(entry.full_name), "proc.%s", proc_desc->name);
-			if (rc < 0 || (size_t)rc >= sizeof(entry.full_name)) {
-				goto cleanup;
-			}
-
-			rc = snprintf(entry.backend_name, sizeof(entry.backend_name), "proc");
-			if (rc < 0 || (size_t)rc >= sizeof(entry.backend_name)) {
+			entry.full_name = entry.full_name_storage;
+			rc = snprintf(entry.full_name_storage, sizeof(entry.full_name_storage), "proc.%s", proc_desc->name);
+			if (rc < 0 || (size_t)rc >= sizeof(entry.full_name_storage)) {
 				goto cleanup;
 			}
 
 			entry.type = proc_desc->type;
-			entry.dir = TAG_DIR_OUT;
-			entry.offset_byte = (uint32_t)process_index;
-			entry.bit_index = 0U;
 			entry.kind = TAGK_PROC;
-			entry.proc_index = (uint32_t)process_index;
+			entry.ref.proc.index = (uint32_t)process_index;
 
 			if (tag_table_add(&rt->tag_table, &entry) != 0) {
 				goto cleanup;
@@ -249,24 +291,16 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 			}
 
 			memset(&entry, 0, sizeof(entry));
-			rc = snprintf(entry.full_name, sizeof(entry.full_name), "hmi.%s", hmi_desc->name);
-			if (rc < 0 || (size_t)rc >= sizeof(entry.full_name)) {
-				goto cleanup;
-			}
-
-			rc = snprintf(entry.backend_name, sizeof(entry.backend_name), "hmi");
-			if (rc < 0 || (size_t)rc >= sizeof(entry.backend_name)) {
+			entry.full_name = entry.full_name_storage;
+			rc = snprintf(entry.full_name_storage, sizeof(entry.full_name_storage), "hmi.%s", hmi_desc->name);
+			if (rc < 0 || (size_t)rc >= sizeof(entry.full_name_storage)) {
 				goto cleanup;
 			}
 
 			entry.type = target_entry->type;
-			entry.dir = target_entry->dir;
-			entry.offset_byte = 0U;
-			entry.bit_index = 0U;
 			entry.kind = TAGK_HMI_ALIAS;
-			entry.proc_index = 0U;
-			entry.alias_target = target_id;
-			entry.hmi_access = (uint8_t)hmi_desc->access;
+			entry.ref.hmi_alias.target = target_id;
+			entry.ref.hmi_alias.access = (uint8_t)hmi_desc->access;
 
 			if (tag_table_add(&rt->tag_table, &entry) != 0) {
 				goto cleanup;
@@ -287,25 +321,31 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 			const TagDesc_t *tag_desc = &desc->tags[tag_index];
 			TagEntry_t entry;
 			int rc;
+			uint16_t backend_index_value;
+			uint16_t device_backend_index;
 
 			memset(&entry, 0, sizeof(entry));
-			rc = snprintf(entry.full_name, sizeof(entry.full_name), "%s.%s", device_cfg->name, tag_desc->name);
-			if (rc < 0 || (size_t)rc >= sizeof(entry.full_name)) {
+			entry.full_name = entry.full_name_storage;
+			rc = snprintf(entry.full_name_storage, sizeof(entry.full_name_storage), "%s.%s", device_cfg->name, tag_desc->name);
+			if (rc < 0 || (size_t)rc >= sizeof(entry.full_name_storage)) {
 				goto cleanup;
 			}
 
-			rc = snprintf(entry.backend_name, sizeof(entry.backend_name), "%s", device_cfg->backend);
-			if (rc < 0 || (size_t)rc >= sizeof(entry.backend_name)) {
+			if (find_backend_index(config, device_cfg->backend, &backend_index_value) != 0) {
+				goto cleanup;
+			}
+
+			if (find_backend_device_index(config, device_index, device_cfg->backend, &device_backend_index) != 0) {
 				goto cleanup;
 			}
 
 			entry.type = tag_desc->type;
-			entry.dir = tag_desc->dir;
-			entry.offset_byte = tag_desc->offset_byte;
-			entry.bit_index = tag_desc->bit_index;
-			entry.device_cfg = device_cfg;
 			entry.kind = TAGK_IO;
-			entry.proc_index = 0U;
+			entry.ref.io.device_index = device_backend_index;
+			entry.ref.io.backend_index = backend_index_value;
+			entry.ref.io.dir = tag_desc->dir;
+			entry.ref.io.byte_offset = tag_desc->offset_byte;
+			entry.ref.io.bit = tag_desc->bit_index;
 
 			if (tag_table_add(&rt->tag_table, &entry) != 0) {
 				goto cleanup;

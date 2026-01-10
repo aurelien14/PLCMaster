@@ -6,32 +6,50 @@
 #include <stdint.h>
 #include "devices/device_desc.h"
 
-struct DeviceConfig;
-
 #define MAX_TAGS 256U
 
 typedef uint32_t TagId_t; /* 0 = invalid */
 
 typedef enum TagKind
 {
-	TAGK_IO = 0,
-	TAGK_PROC = 1,
-	TAGK_HMI_ALIAS = 2
+	TAGK_INVALID = 0,
+	TAGK_IO = 1,
+	TAGK_PROC = 2,
+	TAGK_HMI_ALIAS = 3
 } TagKind_t;
+
+typedef struct TagIORef
+{
+	uint16_t device_index;
+	uint16_t backend_index;
+	TagDir_t dir;
+	uint32_t byte_offset;
+	uint8_t bit;
+} TagIORef_t;
+
+typedef struct TagProcRef
+{
+	uint32_t index;
+} TagProcRef_t;
+
+typedef struct TagHmiAliasRef
+{
+	TagId_t target;
+	uint8_t access;
+} TagHmiAliasRef_t;
 
 typedef struct TagEntry
 {
-	char full_name[128];
+	const char *full_name;
+	char full_name_storage[128];
 	TagType_t type;
-	TagDir_t dir;
-	uint32_t offset_byte;
-	uint8_t bit_index;
-	char backend_name[16];
-	const struct DeviceConfig *device_cfg;
 	TagKind_t kind;
-	uint32_t proc_index;
-	TagId_t alias_target;
-	uint8_t hmi_access;
+	union
+	{
+		TagIORef_t io;
+		TagProcRef_t proc;
+		TagHmiAliasRef_t hmi_alias;
+	} ref;
 } TagEntry_t;
 
 typedef struct TagTable
