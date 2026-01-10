@@ -452,10 +452,10 @@ static void *ethercat_rt_thread(void *arg)
 			if (plat_atomic_exchange_i32(&impl->fault_latched, 1) == 0)
 			{
 				printf("[EC] Fault latched: WKC below expected (%d < %d) or state left OP\n", wkc, expected_wkc);
+				ethercat_zero_output_buffers(impl);
 			}
 			plat_atomic_store_bool(&impl->in_op, false);
 			zero_outputs = true;
-			ethercat_zero_output_buffers(impl);
 		}
 
 		ethercat_copy_out_to_iomap(impl, out_idx, zero_outputs);
