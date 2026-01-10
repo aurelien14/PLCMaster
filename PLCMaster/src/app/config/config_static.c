@@ -1,6 +1,8 @@
 /* Static configuration stub implementation. TODO: load and manage static configuration. */
 
 #include "app/config/config_static.h"
+//#define FAKE_DEV
+
 
 static const BackendConfig_t kBackendConfigs[] = {
 	{
@@ -19,6 +21,23 @@ static const BackendConfig_t kBackendConfigs[] = {
 };
 
 static const DeviceConfig_t kDeviceConfigs[] = {
+#if defined FAKE_DEV
+	{
+		.name = "CPU_IO",
+		.model = "FakEcatDev",
+		.backend = "ec0",
+		.ethercat =
+			{
+				.expected_position = 1,
+			},
+		.io_addr = 1,
+		.expected_identity =
+			{
+				.vendor_id = 0x1234567,
+				.product_code = 0x123,
+				},
+	},
+#else
 	{
 		.name = "CPU_IO",
 		.model = "L230",
@@ -34,6 +53,7 @@ static const DeviceConfig_t kDeviceConfigs[] = {
 				.product_code = 0x3213335,
 			},
 	},
+#endif
 };
 
 static const ProcessVarDesc_t kProcessVarDescs[] = {

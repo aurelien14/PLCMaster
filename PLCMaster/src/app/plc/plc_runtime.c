@@ -38,14 +38,14 @@ static void log_backend_debug(const Runtime_t *rt)
 {
 	size_t i;
 
-	if (rt == NULL || rt->backends == NULL)
+	if (rt == NULL /* || rt->backends == NULL*/)
 	{
 		return;
 	}
 
 	for (i = 0; i < rt->backend_count; ++i)
 	{
-		const BackendDriver_t *drv = &rt->backends[i];
+		const BackendDriver_t *drv = &rt->backend_array[i];
 		if (drv->type == BACKEND_TYPE_ETHERCAT)
 		{
 			log_ethercat_debug(drv);

@@ -17,6 +17,7 @@ typedef struct
 {
 	Runtime_t*	runtime;
 	TagId_t		temp_sp_id;
+	TagId_t		x15;
 } PlcDemoControlCtx_t;
 
 int plc_demo_task_blink(void* ctx);

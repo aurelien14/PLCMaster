@@ -21,6 +21,9 @@ int app_register_plc_tasks(PlcScheduler_t *sched, Runtime_t *rt)
 	int rc = -1;
 	PlcTask_t blink_task;
 	PlcTask_t control_task;
+	PlcTask_t iotest_task;
+
+
 
 	if (sched == NULL || rt == NULL)
 	{
@@ -31,11 +34,12 @@ int app_register_plc_tasks(PlcScheduler_t *sched, Runtime_t *rt)
 	memset(&g_blink_ctx, 0, sizeof(g_blink_ctx));
 	memset(&g_control_ctx, 0, sizeof(g_control_ctx));
 
-	rc = plc_app_bind(&g_app, &rt->tag_table);
+	/*rc = plc_app_bind(&g_app, &rt->tag_table);
 	if (rc != 0)
 	{
 		return rc;
-	}
+	}*/
+	g_app.runtime = rt;
 
 	g_control_ctx.runtime = rt;
 	g_control_ctx.temp_sp_id = tag_table_find_id(&rt->tag_table, "proc.temp_sp");
@@ -52,6 +56,14 @@ int app_register_plc_tasks(PlcScheduler_t *sched, Runtime_t *rt)
 		.name = "control",
 		.fn = plc_demo_task_control,
 		.ctx = &g_control_ctx,
+		.period_ms = 1000,
+		.phase_ms = 0,
+		.last_run_ms = 0,
+	};
+	control_task = (PlcTask_t){
+		.name = "io",
+		.fn = plc_dio_test,
+		.ctx = &g_app,
 		.period_ms = 1000,
 		.phase_ms = 0,
 		.last_run_ms = 0,

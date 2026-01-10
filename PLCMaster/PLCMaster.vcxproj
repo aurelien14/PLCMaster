@@ -137,6 +137,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\backends\virtual\virtual_backend.c" />
+    <ClCompile Include="src\devices\VirtualDevice\virtual_device_desc.c" />
+    <ClCompile Include="src\devices\VirtualDevice\virtual_device_desc.h" />
     <ClCompile Include="src\main.c" />
     <ClCompile Include="src\backends\ethercat\ec_backend.c" />
     <ClCompile Include="src\backends\ethercat\ec_soem_lifecycle.c" />
@@ -167,6 +170,7 @@
     <ClInclude Include="src\backends\ethercat\ec_soem_lifecycle.h" />
     <ClInclude Include="src\backends\modbus\mb_backend.h" />
     <ClInclude Include="src\backends\registry\backend_registry.h" />
+    <ClInclude Include="src\backends\virtual\virtual_backend.h" />
     <ClInclude Include="src\core\platform\platform_atomic.h" />
     <ClInclude Include="src\core\platform\platform_detect.h" />
     <ClInclude Include="src\core\platform\platform_mem.h" />

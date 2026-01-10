@@ -1,7 +1,6 @@
 /* Demo PLC tasks. */
 
 #include "app/plc/plc_tasks_demo.h"
-
 #include <stdio.h>
 
 int plc_demo_task_blink(void* ctx)
@@ -20,6 +19,7 @@ int plc_demo_task_blink(void* ctx)
 int plc_demo_task_control(void* ctx)
 {
 	float temp_sp = 0.0f;
+
 	PlcDemoControlCtx_t* control = (PlcDemoControlCtx_t*)ctx;
 
 	if (control == NULL || control->runtime == NULL)
@@ -41,5 +41,7 @@ int plc_demo_task_control(void* ctx)
 	printf("[PLC] control temp_sp=%.2f\n", temp_sp);
 	temp_sp += 0.25f;
 
+	
 	return tag_write_real(control->runtime, control->temp_sp_id, temp_sp);
 }
+

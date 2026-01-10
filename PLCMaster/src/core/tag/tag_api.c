@@ -35,6 +35,10 @@ static int get_resolved_value(Runtime_t* rt, TagId_t id, TagType_t expected_type
 		return get_resolved_value(rt, entry->alias_target, expected_type, for_write, depth + 1, out_entry, out_value);
 	}
 
+	/*if (entry->kind == TAGK_IO) {
+
+	}**/
+
 	if (entry->kind != TAGK_PROC) {
 		return -1;
 	}

@@ -14,9 +14,11 @@ typedef enum BackendType
 	BACKEND_TYPE_NONE = 0,
 	BACKEND_TYPE_ETHERCAT = 1,
 	BACKEND_TYPE_MODBUS = 2,
+	BACKEND_TYPE_VIRTUAL = 3,
 } BackendType_t;
 
-#define MAX_BACKENDS 4
+#define MAX_BACKENDS 6
+#define DEVICE_REGISTRY_CAPACITY 20
 
 typedef struct BackendDriver BackendDriver_t;
 

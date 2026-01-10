@@ -5,6 +5,8 @@
 #include <string.h>
 
 #include "backends/ethercat/ec_backend.h"
+#include "backends/virtual/virtual_backend.h"
+
 
 BackendDriver_t *backend_create(
 	const BackendConfig_t *cfg,
@@ -28,6 +30,8 @@ BackendDriver_t *backend_create(
 	switch (backend_type) {
 	case BACKEND_TYPE_ETHERCAT:
 		return ethercat_backend_create(cfg, iomap_size_hint, max_devices, backend_index);
+	case BACKEND_TYPE_VIRTUAL:
+		return virtual_backend_create(cfg, backend_index);
 	default:
 		return NULL;
 	}

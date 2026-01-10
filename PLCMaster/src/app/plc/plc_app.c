@@ -1,8 +1,10 @@
 /* PLC application bindings. */
 
 #include <stddef.h>
-
+#include <stdio.h>
+#include <stdbool.h>
 #include "app/plc/plc_app.h"
+#include "core/tag/tag_api.h"
 
 int plc_app_bind(PlcApp_t* app, const TagTable_t* tags)
 {
@@ -67,4 +69,12 @@ int plc_app_bind(PlcApp_t* app, const TagTable_t* tags)
 	}
 
 	return 0;
+}
+
+int plc_dio_test(void* ctx) {
+	static bool x15 = 1;
+
+	PlcApp_t* app = (PlcApp_t*)ctx;
+	TagId_t id = tag_table_find_id(app->runtime->tag_table.entries, "CPU_IO.X15_Out0");
+	return tag_write_bool(app->runtime, id, x15);
 }
