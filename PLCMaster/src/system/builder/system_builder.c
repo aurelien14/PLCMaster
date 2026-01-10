@@ -303,6 +303,7 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 			entry.dir = tag_desc->dir;
 			entry.offset_byte = tag_desc->offset_byte;
 			entry.bit_index = tag_desc->bit_index;
+			entry.device_cfg = device_cfg;
 			entry.kind = TAGK_IO;
 			entry.proc_index = 0U;
 
