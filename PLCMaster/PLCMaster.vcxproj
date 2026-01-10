@@ -156,7 +156,6 @@
     <ClCompile Include="src\app\plc\plc_app.c" />
     <ClCompile Include="src\app\plc\plc_runtime.c" />
     <ClCompile Include="src\core\plc\plc_scheduler.c" />
-    <ClCompile Include="src\app\plc\plc_tasks_demo.c" />
     <ClCompile Include="src\system\builder\system_builder.c" />
     <ClCompile Include="src\app\config\config_static.c" />
     <ClCompile Include="src\app\demo\demo_tag_io.c" />
@@ -186,7 +185,6 @@
     <ClInclude Include="src\app\plc\plc_runtime.h" />
     <ClInclude Include="src\core\plc\plc_scheduler.h" />
     <ClInclude Include="src\core\plc\plc_task.h" />
-    <ClInclude Include="src\app\plc\plc_tasks_demo.h" />
     <ClInclude Include="src\system\builder\system_builder.h" />
     <ClInclude Include="src\app\config\config_static.h" />
     <ClInclude Include="src\app\demo\demo_tag_io.h" />

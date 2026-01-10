@@ -1,73 +1,70 @@
 /* Application entrypoints. */
 
 #include <string.h>
-#include <stdio.h>
 
 #include "app/app.h"
-#include "app/plc/plc_app.h"
-#include "app/plc/plc_tasks_demo.h"
-
-static PlcApp_t g_app;
-static PlcDemoBlinkCtx_t g_blink_ctx;
-static PlcDemoControlCtx_t g_control_ctx;
+#include "core/plc/plc_task.h"
 
 const SystemConfig_t *app_get_config(void)
 {
 	return get_static_config();
 }
 
-int app_register_plc_tasks(PlcScheduler_t *sched, Runtime_t *rt)
+int app_bind(PlcApp_t *app, Runtime_t *rt)
 {
-	int rc = -1;
-	PlcTask_t blink_task;
-	PlcTask_t control_task;
+	if (app == NULL || rt == NULL)
+	{
+		return -1;
+	}
+
+	return plc_app_bind(app, &rt->tag_table);
+}
+
+int app_register_tasks(PlcScheduler_t *sched, Runtime_t *rt)
+{
+	const SystemConfig_t *cfg;
+	size_t task_index;
+	int rc = 0;
 
 	if (sched == NULL || rt == NULL)
 	{
 		return -1;
 	}
 
-	memset(&g_app, 0, sizeof(g_app));
-	memset(&g_blink_ctx, 0, sizeof(g_blink_ctx));
-	memset(&g_control_ctx, 0, sizeof(g_control_ctx));
-
-	rc = plc_app_bind(&g_app, &rt->tag_table);
-	if (rc != 0)
+	cfg = app_get_config();
+	if (cfg == NULL)
 	{
-		return rc;
+		return -1;
 	}
 
-	g_control_ctx.runtime = rt;
-	g_control_ctx.temp_sp_id = tag_table_find_id(&rt->tag_table, "proc.temp_sp");
-
-	blink_task = (PlcTask_t){
-		.name = "blink",
-		.fn = plc_demo_task_blink,
-		.ctx = &g_blink_ctx,
-		.period_ms = 200,
-		.phase_ms = 0,
-		.last_run_ms = 0,
-	};
-	control_task = (PlcTask_t){
-		.name = "control",
-		.fn = plc_demo_task_control,
-		.ctx = &g_control_ctx,
-		.period_ms = 1000,
-		.phase_ms = 0,
-		.last_run_ms = 0,
-	};
-
-	rc = plc_scheduler_add_task(sched, &blink_task);
-	if (rc == 0)
+	if (cfg->task_count == 0 || cfg->tasks == NULL)
 	{
-		rc = plc_scheduler_add_task(sched, &control_task);
+		return 0;
+	}
+
+	for (task_index = 0; task_index < cfg->task_count; ++task_index)
+	{
+		const AppTaskConfig_t *task_cfg = &cfg->tasks[task_index];
+		PlcTask_t task;
+
+		if (task_cfg->name == NULL || task_cfg->fn == NULL)
+		{
+			return -1;
+		}
+
+		memset(&task, 0, sizeof(task));
+		task.name = task_cfg->name;
+		task.fn = task_cfg->fn;
+		task.ctx = rt;
+		task.period_ms = task_cfg->period_ms;
+		task.phase_ms = task_cfg->phase_ms;
+
+		rc = plc_scheduler_add_task(sched, &task);
+		if (rc != 0)
+		{
+			return rc;
+		}
 	}
 
 	return rc;
-}
-
-void app_log_bindings(void)
-{
-	printf("ID CPU_IO.X15_Out0 = %u\n", g_app.io.X15_Out0);
-	printf("ID CPU_IO.X21_CPU_Pt1.Pt_Value = %u\n", g_app.io.X21_CPU_Pt1_Pt_Value);
 }

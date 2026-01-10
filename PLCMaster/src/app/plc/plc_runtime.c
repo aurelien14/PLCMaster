@@ -8,7 +8,6 @@
 #include "core/plc/plc_scheduler.h"
 #include "core/runtime/runtime.h"
 #include "backends/ethercat/ec_backend.h"
-#include "app/app.h"
 #include "app/plc/plc_runtime.h"
 
 #ifdef DEV
@@ -92,7 +91,6 @@ int plc_runtime_run(Runtime_t *rt, PlcScheduler_t *sched)
 	{
 		printf("OK\n");
 		printf("Tag count: %u\n", rt->tag_table.count);
-		app_log_bindings();
 	}
 	else
 	{
