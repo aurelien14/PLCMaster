@@ -1,0 +1,5 @@
+<Project>
+  <PropertyGroup>
+    <PLC_ENABLE_TESTS Condition="'$(PLC_ENABLE_TESTS)' == ''">OFF</PLC_ENABLE_TESTS>
+  </PropertyGroup>
+</Project>

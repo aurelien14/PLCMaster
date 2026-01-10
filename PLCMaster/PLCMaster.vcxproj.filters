@@ -78,9 +78,6 @@
     <ClCompile Include="src\backends\registry\backend_registry.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="src\app\demo\demo_tag_io.c">
-      <Filter>Fichiers sources</Filter>
-    </ClCompile>
     <ClCompile Include="src\app\plc\plc_runtime.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
@@ -132,9 +129,6 @@
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
     <ClInclude Include="src\core\plc\plc_task.h">
-      <Filter>Fichiers d%27en-tête</Filter>
-    </ClInclude>
-    <ClInclude Include="src\app\demo\demo_tag_io.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
     <ClInclude Include="src\system\builder\system_builder.h">
