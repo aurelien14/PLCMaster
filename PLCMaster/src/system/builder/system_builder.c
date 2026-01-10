@@ -80,6 +80,150 @@ static void cleanup_backends(Runtime_t *rt)
 	rt->backends = NULL;
 }
 
+static uint32_t tag_type_size(TagType_t type)
+{
+	switch (type)
+	{
+	case TAG_T_U8:
+		return sizeof(uint8_t);
+	case TAG_T_U16:
+		return sizeof(uint16_t);
+	case TAG_T_U32:
+		return sizeof(uint32_t);
+	case TAG_T_REAL:
+		return sizeof(float);
+	case TAG_T_BOOL:
+	default:
+		return 0U;
+	}
+}
+
+static int validate_tag_desc(const TagDesc_t *tag_desc, const DeviceDesc_t *desc)
+{
+	uint32_t io_size;
+	uint32_t type_size;
+	uint32_t end_offset;
+
+	if (tag_desc == NULL || desc == NULL || tag_desc->name == NULL)
+	{
+		return -1;
+	}
+
+	if (tag_desc->dir != TAGDIR_IN && tag_desc->dir != TAGDIR_OUT)
+	{
+		return -1;
+	}
+
+	io_size = (tag_desc->dir == TAGDIR_IN) ? desc->tx_bytes : desc->rx_bytes;
+	if (io_size == 0U)
+	{
+		return -1;
+	}
+
+	if (tag_desc->type == TAG_T_BOOL)
+	{
+		if (tag_desc->bit_index >= 8U)
+		{
+			return -1;
+		}
+		if (tag_desc->offset_byte >= io_size)
+		{
+			return -1;
+		}
+		return 0;
+	}
+
+	if (tag_desc->bit_index != 0U)
+	{
+		return -1;
+	}
+
+	type_size = tag_type_size(tag_desc->type);
+	if (type_size == 0U)
+	{
+		return -1;
+	}
+
+	end_offset = tag_desc->offset_byte + type_size;
+	if (end_offset > io_size)
+	{
+		return -1;
+	}
+
+	return 0;
+}
+
+static int system_build_tags_for_device(Runtime_t *rt,
+	const SystemConfig_t *config,
+	size_t device_index,
+	uint16_t backend_index,
+	uint16_t device_backend_index,
+	const DeviceDesc_t *desc)
+{
+	const DeviceConfig_t *device_cfg;
+	uint32_t tag_index;
+
+	if (rt == NULL || config == NULL || desc == NULL)
+	{
+		return -1;
+	}
+
+	if (device_index >= config->device_count)
+	{
+		return -1;
+	}
+
+	device_cfg = &config->devices[device_index];
+	if (device_cfg->name == NULL)
+	{
+		return -1;
+	}
+
+	if (desc->tag_count > 0 && desc->tags == NULL)
+	{
+		return -1;
+	}
+
+	for (tag_index = 0; tag_index < desc->tag_count; ++tag_index)
+	{
+		const TagDesc_t *tag_desc = &desc->tags[tag_index];
+		TagEntry_t entry;
+		int rc;
+
+		if (validate_tag_desc(tag_desc, desc) != 0)
+		{
+			return -1;
+		}
+
+		memset(&entry, 0, sizeof(entry));
+		entry.full_name = entry.full_name_storage;
+		rc = snprintf(entry.full_name_storage,
+			sizeof(entry.full_name_storage),
+			"%s.%s",
+			device_cfg->name,
+			tag_desc->name);
+		if (rc < 0 || (size_t)rc >= sizeof(entry.full_name_storage))
+		{
+			return -1;
+		}
+
+		entry.type = tag_desc->type;
+		entry.kind = TAGK_IO;
+		entry.ref.io.device_index = device_backend_index;
+		entry.ref.io.backend_index = backend_index;
+		entry.ref.io.dir = tag_desc->dir;
+		entry.ref.io.byte_offset = tag_desc->offset_byte;
+		entry.ref.io.bit = tag_desc->bit_index;
+
+		if (tag_table_add(&rt->tag_table, &entry) != 0)
+		{
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
 int system_build(Runtime_t *rt, const SystemConfig_t *config)
 {
 	size_t device_index;
@@ -311,45 +455,24 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 	for (device_index = 0; device_index < config->device_count; ++device_index) {
 		const DeviceConfig_t *device_cfg = &config->devices[device_index];
 		const DeviceDesc_t *desc = device_registry_find(device_cfg->model);
-		uint32_t tag_index;
+		uint16_t backend_index_value;
+		uint16_t device_backend_index;
 
 		if (desc == NULL) {
 			goto cleanup;
 		}
 
-		for (tag_index = 0; tag_index < desc->tag_count; ++tag_index) {
-			const TagDesc_t *tag_desc = &desc->tags[tag_index];
-			TagEntry_t entry;
-			int rc;
-			uint16_t backend_index_value;
-			uint16_t device_backend_index;
 
-			memset(&entry, 0, sizeof(entry));
-			entry.full_name = entry.full_name_storage;
-			rc = snprintf(entry.full_name_storage, sizeof(entry.full_name_storage), "%s.%s", device_cfg->name, tag_desc->name);
-			if (rc < 0 || (size_t)rc >= sizeof(entry.full_name_storage)) {
-				goto cleanup;
-			}
+		if (find_backend_index(config, device_cfg->backend, &backend_index_value) != 0) {
+			goto cleanup;
+		}
 
-			if (find_backend_index(config, device_cfg->backend, &backend_index_value) != 0) {
-				goto cleanup;
-			}
+		if (find_backend_device_index(config, device_index, device_cfg->backend, &device_backend_index) != 0) {
+			goto cleanup;
+		}
 
-			if (find_backend_device_index(config, device_index, device_cfg->backend, &device_backend_index) != 0) {
-				goto cleanup;
-			}
-
-			entry.type = tag_desc->type;
-			entry.kind = TAGK_IO;
-			entry.ref.io.device_index = device_backend_index;
-			entry.ref.io.backend_index = backend_index_value;
-			entry.ref.io.dir = tag_desc->dir;
-			entry.ref.io.byte_offset = tag_desc->offset_byte;
-			entry.ref.io.bit = tag_desc->bit_index;
-
-			if (tag_table_add(&rt->tag_table, &entry) != 0) {
-				goto cleanup;
-			}
+		if (system_build_tags_for_device(rt, config, device_index, backend_index_value, device_backend_index, desc) != 0) {
+			goto cleanup;
 		}
 	}
 
