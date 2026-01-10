@@ -18,9 +18,12 @@ typedef enum TagType_t {
 } TagType_t;
 
 typedef enum TagDir_t {
-    TAG_DIR_IN = 0,
-    TAG_DIR_OUT
+    TAGDIR_IN = 0,
+    TAGDIR_OUT
 } TagDir_t;
+
+#define TAG_DIR_IN TAGDIR_IN
+#define TAG_DIR_OUT TAGDIR_OUT
 
 typedef struct TagDesc_t {
     const char *name;

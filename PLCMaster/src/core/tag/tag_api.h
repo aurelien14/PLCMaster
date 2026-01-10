@@ -9,6 +9,8 @@
 
 #include "core/runtime/runtime.h"
 
+int tag_read(Runtime_t* rt, TagId_t id, void* out, size_t out_sz);
+int tag_write(Runtime_t* rt, TagId_t id, const void* in, size_t in_sz);
 int tag_read_bool(Runtime_t* rt, TagId_t id, bool *out);
 int tag_write_bool(Runtime_t* rt, TagId_t id, bool v);
 int tag_read_u8(Runtime_t* rt, TagId_t id, uint8_t *out);

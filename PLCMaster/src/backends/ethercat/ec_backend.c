@@ -25,28 +25,6 @@ static EthercatDriver_t *get_impl(BackendDriver_t *driver)
     return (EthercatDriver_t *)driver->impl;
 }
 
-static EthercatDevice_t *find_device(EthercatDriver_t *impl, const DeviceConfig_t *cfg)
-{
-    size_t i;
-
-    if (impl == NULL || cfg == NULL) {
-        return NULL;
-    }
-
-    for (i = 0; i < impl->device_count; ++i) {
-        if (impl->devices[i].cfg == cfg) {
-            return &impl->devices[i];
-        }
-        if (impl->devices[i].cfg != NULL && impl->devices[i].cfg->name != NULL && cfg->name != NULL) {
-            if (strcmp(impl->devices[i].cfg->name, cfg->name) == 0) {
-                return &impl->devices[i];
-            }
-        }
-    }
-
-    return NULL;
-}
-
 static void free_device_buffers(EthercatDevice_t *dev)
 {
     size_t i;
@@ -612,7 +590,7 @@ static void ethercat_sync_buffers(BackendDriver_t *driver)
     plat_atomic_store_i32(&impl->active_out_buffer_idx, next_out);
 }
 
-static const uint8_t *ethercat_get_input_data(BackendDriver_t *driver, const DeviceConfig_t *cfg, size_t *size_out)
+static const uint8_t *ethercat_get_input_data(BackendDriver_t *driver, uint16_t device_index, uint32_t *size_out)
 {
     EthercatDriver_t *impl = get_impl(driver);
     EthercatDevice_t *dev;
@@ -626,10 +604,10 @@ static const uint8_t *ethercat_get_input_data(BackendDriver_t *driver, const Dev
         return NULL;
     }
 
-    dev = find_device(impl, cfg);
-    if (dev == NULL) {
+    if (device_index >= impl->device_count) {
         return NULL;
     }
+    dev = &impl->devices[device_index];
 
     idx = plat_atomic_load_i32(&impl->active_in_buffer_idx);
     if (idx < 0 || idx > 1) {
@@ -643,7 +621,7 @@ static const uint8_t *ethercat_get_input_data(BackendDriver_t *driver, const Dev
     return dev->in_buffers[idx];
 }
 
-static uint8_t *ethercat_get_output_data(BackendDriver_t *driver, const DeviceConfig_t *cfg, size_t *size_out)
+static uint8_t *ethercat_get_output_data(BackendDriver_t *driver, uint16_t device_index, uint32_t *size_out)
 {
     EthercatDriver_t *impl = get_impl(driver);
     EthercatDevice_t *dev;
@@ -657,10 +635,10 @@ static uint8_t *ethercat_get_output_data(BackendDriver_t *driver, const DeviceCo
         return NULL;
     }
 
-    dev = find_device(impl, cfg);
-    if (dev == NULL) {
+    if (device_index >= impl->device_count) {
         return NULL;
     }
+    dev = &impl->devices[device_index];
 
     idx = plat_atomic_load_i32(&impl->active_out_buffer_idx);
     if (idx < 0 || idx > 1) {
