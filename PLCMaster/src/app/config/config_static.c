@@ -72,13 +72,29 @@ static const HmiTagDesc_t kHmiTagDescs[] = {
 	},
 };
 
+static int plc_task_noop(void *ctx)
+{
+	(void)ctx;
+	return 0;
+}
+
+static const PlcTaskConfig_t TASKS[] = {
+	{
+		.name = "noop",
+		.period_ms = 1000U,
+		.fn = plc_task_noop,
+		.create_ctx = NULL,
+		.ctx = NULL,
+	},
+};
+
 static const SystemConfig_t kStaticConfig = {
 	.backends = kBackendConfigs,
 	.backend_count = sizeof(kBackendConfigs) / sizeof(kBackendConfigs[0]),
 	.devices = kDeviceConfigs,
 	.device_count = sizeof(kDeviceConfigs) / sizeof(kDeviceConfigs[0]),
-	.tasks = NULL,
-	.task_count = 0U,
+	.tasks = TASKS,
+	.task_count = sizeof(TASKS) / sizeof(TASKS[0]),
 	.process_vars = kProcessVarDescs,
 	.process_var_count = sizeof(kProcessVarDescs) / sizeof(kProcessVarDescs[0]),
 	.hmi_tags = kHmiTagDescs,

@@ -9,6 +9,9 @@
 #include "core/platform/platform_time.h"
 
 static void *plc_scheduler_thread(void *arg);
+static int plc_scheduler_add_task_internal(PlcScheduler_t* s, const PlcTask_t* task);
+static void plc_scheduler_drain_pending(PlcScheduler_t* s);
+static int plc_scheduler_queue_task(PlcScheduler_t* s, const PlcTask_t* task);
 
 int plc_scheduler_init(PlcScheduler_t* s, uint32_t base_cycle_ms)
 {
@@ -19,6 +22,9 @@ int plc_scheduler_init(PlcScheduler_t* s, uint32_t base_cycle_ms)
 
 	s->base_cycle_ms = base_cycle_ms;
 	s->task_count = 0;
+	plat_atomic_store_u32(&s->pending_write, 0U);
+	plat_atomic_store_u32(&s->pending_read, 0U);
+	memset(s->pending_ready, 0, sizeof(s->pending_ready));
 	plat_atomic_store_bool(&s->running, false);
 	s->on_cycle_begin = NULL;
 	s->on_cycle_end = NULL;
@@ -29,25 +35,27 @@ int plc_scheduler_init(PlcScheduler_t* s, uint32_t base_cycle_ms)
 
 int plc_scheduler_add_task(PlcScheduler_t* s, const PlcTask_t* task)
 {
-	if (s == NULL || task == NULL || task->fn == NULL || task->period_ms == 0)
-	{
-		return -1;
-	}
-
-	if (s->task_count >= sizeof(s->tasks) / sizeof(s->tasks[0]))
-	{
-		return -1;
-	}
-
 	if (plat_atomic_load_bool(&s->running))
 	{
 		return -1;
 	}
 
-	s->tasks[s->task_count] = *task;
-	s->tasks[s->task_count].last_run_ms = 0;
-	s->task_count++;
-	return 0;
+	return plc_scheduler_add_task_internal(s, task);
+}
+
+int plc_scheduler_add_task_runtime(PlcScheduler_t* s, const PlcTask_t* task)
+{
+	if (s == NULL || task == NULL || task->fn == NULL || task->period_ms == 0)
+	{
+		return -1;
+	}
+
+	if (!plat_atomic_load_bool(&s->running))
+	{
+		return plc_scheduler_add_task(s, task);
+	}
+
+	return plc_scheduler_queue_task(s, task);
 }
 
 int plc_scheduler_set_callbacks(PlcScheduler_t* s, void (*on_cycle_begin)(void *user), void (*on_cycle_end)(void *user), void *user)
@@ -159,6 +167,8 @@ static void *plc_scheduler_thread(void *arg)
 			printf("[PLC] overrun %" PRIu64 "ms\n", now_ms - next_tick_ms);
 		}
 
+		plc_scheduler_drain_pending(s);
+
 		if (s->on_cycle_begin != NULL)
 		{
 			s->on_cycle_begin(s->user);
@@ -200,4 +210,89 @@ static void *plc_scheduler_thread(void *arg)
 	}
 
 	return NULL;
+}
+
+static int plc_scheduler_add_task_internal(PlcScheduler_t* s, const PlcTask_t* task)
+{
+	if (s == NULL || task == NULL || task->fn == NULL || task->period_ms == 0)
+	{
+		return -1;
+	}
+
+	if (s->task_count >= sizeof(s->tasks) / sizeof(s->tasks[0]))
+	{
+		return -1;
+	}
+
+	s->tasks[s->task_count] = *task;
+	s->tasks[s->task_count].last_run_ms = 0;
+	s->task_count++;
+	return 0;
+}
+
+static void plc_scheduler_drain_pending(PlcScheduler_t* s)
+{
+	uint32_t read_index;
+	uint32_t write_index;
+	uint32_t capacity;
+
+	if (s == NULL)
+	{
+		return;
+	}
+
+	capacity = (uint32_t)(sizeof(s->pending_tasks) / sizeof(s->pending_tasks[0]));
+	read_index = plat_atomic_load_u32(&s->pending_read);
+	write_index = plat_atomic_load_u32(&s->pending_write);
+
+	while (read_index < write_index)
+	{
+		uint32_t slot = read_index % capacity;
+
+		if (!plat_atomic_load_bool(&s->pending_ready[slot]))
+		{
+			break;
+		}
+
+		PlcTask_t task = s->pending_tasks[slot];
+		plat_atomic_store_bool(&s->pending_ready[slot], false);
+		plat_atomic_store_u32(&s->pending_read, read_index + 1U);
+		read_index++;
+
+		if (plc_scheduler_add_task_internal(s, &task) != 0)
+		{
+			printf("[PLC] drop pending task %s\n", task.name ? task.name : "(null)");
+		}
+	}
+}
+
+static int plc_scheduler_queue_task(PlcScheduler_t* s, const PlcTask_t* task)
+{
+	uint32_t capacity;
+
+	if (s == NULL || task == NULL)
+	{
+		return -1;
+	}
+
+	capacity = (uint32_t)(sizeof(s->pending_tasks) / sizeof(s->pending_tasks[0]));
+
+	for (;;)
+	{
+		uint32_t read_index = plat_atomic_load_u32(&s->pending_read);
+		uint32_t write_index = plat_atomic_load_u32(&s->pending_write);
+
+		if ((write_index - read_index) >= capacity)
+		{
+			return -1;
+		}
+
+		if (plat_atomic_cas_u32(&s->pending_write, write_index, write_index + 1U))
+		{
+			uint32_t slot = write_index % capacity;
+			s->pending_tasks[slot] = *task;
+			plat_atomic_store_bool(&s->pending_ready[slot], true);
+			return 0;
+		}
+	}
 }

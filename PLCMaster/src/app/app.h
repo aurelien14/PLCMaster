@@ -10,6 +10,6 @@
 
 const SystemConfig_t *app_get_config(void);
 int app_bind(PlcApp_t *app, Runtime_t *rt);
-int app_register_tasks(PlcScheduler_t *sched, Runtime_t *rt);
+int app_register_tasks(PlcScheduler_t *sched, Runtime_t *rt, PlcApp_t *app);
 
 #endif /* APP_H */
