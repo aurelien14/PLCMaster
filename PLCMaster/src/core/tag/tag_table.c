@@ -72,6 +72,7 @@ int tag_table_add(TagTable_t *t, const TagEntry_t *e)
 	dest->dir = e->dir;
 	dest->offset_byte = e->offset_byte;
 	dest->bit_index = e->bit_index;
+	dest->device_cfg = e->device_cfg;
 	dest->kind = e->kind;
 	dest->proc_index = e->proc_index;
 	dest->alias_target = e->alias_target;
