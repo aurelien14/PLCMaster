@@ -21,13 +21,13 @@ static void log_ethercat_debug(const BackendDriver_t *drv)
 
 	impl = (EthercatDriver_t *)drv->impl;
 
-	printf("[EC] last_wkc=%d in_op=%s fault_latched=%d rt_overruns=%" PRIu64 " jitter_ns=%" PRIi64 " jitter_max_ns=%" PRIi64 "\n",
+	printf("[EC] last_wkc=%d in_op=%s fault_latched=%d rt_overruns=%" PRIu64 " jitter_ns=%" PRIu64 " jitter_max_ns=%" PRIu64 "\n",
 		plat_atomic_load_i32(&impl->last_wkc),
 		plat_atomic_load_bool(&impl->in_op) ? "true" : "false",
 		plat_atomic_load_i32(&impl->fault_latched),
 		plat_atomic_load_u64(&impl->rt_overruns),
-		plat_atomic_load_i64(&impl->rt_jitter_current_ns),
-		plat_atomic_load_i64(&impl->rt_jitter_max_ns));
+		plat_atomic_load_u64(&impl->rt_jitter_current_ns),
+		plat_atomic_load_u64(&impl->rt_jitter_max_ns));
 }
 
 static void log_backend_debug(const Runtime_t *rt)

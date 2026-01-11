@@ -294,9 +294,9 @@ static int ethercat_finalize_mapping(BackendDriver_t *driver)
 	plat_atomic_store_bool(&impl->rt_is_running, false);
 	plat_atomic_store_u64(&impl->rt_cycle_count, 0ULL);
 	plat_atomic_store_u64(&impl->rt_overruns, 0ULL);
-	plat_atomic_store_i64(&impl->rt_jitter_current_ns, 0);
-	plat_atomic_store_i64(&impl->rt_jitter_min_ns, INT64_MAX);
-	plat_atomic_store_i64(&impl->rt_jitter_max_ns, INT64_MIN);
+	plat_atomic_store_u64(&impl->rt_jitter_current_ns, 0ULL);
+	plat_atomic_store_u64(&impl->rt_jitter_min_ns, UINT64_MAX);
+	plat_atomic_store_u64(&impl->rt_jitter_max_ns, 0ULL);
 	impl->rt_cycle_us = (uint32_t)(impl->period_ns / 1000ULL);
 
 	if (impl->dc_clock)
@@ -433,7 +433,9 @@ static void *ethercat_rt_thread(void *arg)
 		uint32_t next_in;
 		int wkc;
 		uint64_t now_ns;
-		int64_t lateness_ns;
+		int64_t delta;
+		uint64_t jitter_abs;
+		uint64_t lateness;
 		bool zero_outputs;
 
 		out_idx = ethercat_load_buffer_index(&impl->rt_out_buffer_idx, 0U);
@@ -465,17 +467,19 @@ static void *ethercat_rt_thread(void *arg)
 
 		plat_time_sleep_until_ns(deadline, impl->spin_threshold_ns);
 		now_ns = plat_time_monotonic_ns();
-		lateness_ns = (now_ns > deadline) ? (int64_t)(now_ns - deadline) : 0;
-		plat_atomic_store_i64(&impl->rt_jitter_current_ns, lateness_ns);
-		if (lateness_ns < plat_atomic_load_i64(&impl->rt_jitter_min_ns))
+		delta = (int64_t)(now_ns - deadline);
+		jitter_abs = (delta >= 0) ? (uint64_t)delta : (uint64_t)(-delta);
+		lateness = (delta > 0) ? (uint64_t)delta : 0ULL;
+		plat_atomic_store_u64(&impl->rt_jitter_current_ns, jitter_abs);
+		if (jitter_abs < plat_atomic_load_u64(&impl->rt_jitter_min_ns))
 		{
-			plat_atomic_store_i64(&impl->rt_jitter_min_ns, lateness_ns);
+			plat_atomic_store_u64(&impl->rt_jitter_min_ns, jitter_abs);
 		}
-		if (lateness_ns > plat_atomic_load_i64(&impl->rt_jitter_max_ns))
+		if (jitter_abs > plat_atomic_load_u64(&impl->rt_jitter_max_ns))
 		{
-			plat_atomic_store_i64(&impl->rt_jitter_max_ns, lateness_ns);
+			plat_atomic_store_u64(&impl->rt_jitter_max_ns, jitter_abs);
 		}
-		if (lateness_ns > 0)
+		if (lateness > 0ULL)
 		{
 			(void)plat_atomic_fetch_add_u64(&impl->rt_overruns, 1ULL);
 		}
@@ -539,9 +543,9 @@ static int ethercat_start(BackendDriver_t *driver)
 	plat_atomic_store_bool(&impl->rt_is_running, false);
 	plat_atomic_store_u64(&impl->rt_cycle_count, 0ULL);
 	plat_atomic_store_u64(&impl->rt_overruns, 0ULL);
-	plat_atomic_store_i64(&impl->rt_jitter_current_ns, 0);
-	plat_atomic_store_i64(&impl->rt_jitter_min_ns, INT64_MAX);
-	plat_atomic_store_i64(&impl->rt_jitter_max_ns, INT64_MIN);
+	plat_atomic_store_u64(&impl->rt_jitter_current_ns, 0ULL);
+	plat_atomic_store_u64(&impl->rt_jitter_min_ns, UINT64_MAX);
+	plat_atomic_store_u64(&impl->rt_jitter_max_ns, 0ULL);
 	if (plat_thread_create_ex(&impl->rt_thread, ethercat_rt_thread, impl, &impl->rt_params) != 0)
 	{
 		plat_atomic_store_bool(&impl->in_op, false);
