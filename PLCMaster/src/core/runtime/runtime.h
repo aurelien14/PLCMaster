@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "core/runtime/runtime_health.h"
 #include "core/tag/tag_table.h"
 #include "backends/backend_iface.h"
 
@@ -47,5 +48,6 @@ void runtime_deinit(Runtime_t* rt);
 void runtime_backends_cycle_begin(Runtime_t* rt);
 void runtime_backends_sync_outputs(Runtime_t* rt);
 void runtime_backends_process_nonrt(Runtime_t* rt);
+PlcHealthLevel_t runtime_get_health_level(const Runtime_t* rt);
 
 #endif /* RUNTIME_H */

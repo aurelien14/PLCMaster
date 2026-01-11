@@ -138,6 +138,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\main.c" />
+    <ClCompile Include="src\backends\backend_iface.c" />
     <ClCompile Include="src\backends\ethercat\ec_backend.c" />
     <ClCompile Include="src\backends\ethercat\ec_soem_lifecycle.c" />
     <ClCompile Include="src\backends\modbus\mb_backend.c" />
@@ -173,6 +174,7 @@
     <ClInclude Include="src\core\platform\platform_mem.h" />
     <ClInclude Include="src\core\platform\platform_thread.h" />
     <ClInclude Include="src\core\platform\platform_time.h" />
+    <ClInclude Include="src\core\runtime\runtime_health.h" />
     <ClInclude Include="src\core\runtime\runtime.h" />
     <ClInclude Include="src\core\rt\rt_time.h" />
     <ClInclude Include="src\core\status\status_tags.h" />

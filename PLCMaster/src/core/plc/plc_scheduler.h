@@ -9,13 +9,7 @@
 #include "core/platform/platform_atomic.h"
 #include "core/platform/platform_thread.h"
 #include "core/plc/plc_task.h"
-
-typedef enum PlcHealthLevel
-{
-	PLC_HEALTH_OK = 0,
-	PLC_HEALTH_WARN = 1,
-	PLC_HEALTH_FAULT = 2
-} PlcHealthLevel_t;
+#include "core/runtime/runtime_health.h"
 
 typedef struct
 {
