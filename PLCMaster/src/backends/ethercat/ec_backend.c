@@ -283,10 +283,10 @@ static int ethercat_finalize_mapping(BackendDriver_t *driver)
 		}
 	}
 
-	plat_atomic_store_u32(&impl->in_active_idx, 0U);
-	plat_atomic_store_u32(&impl->plc_in_idx, 0U);
-	plat_atomic_store_u32(&impl->out_active_idx, 0U);
-	plat_atomic_store_u32(&impl->out_plc_idx, 1U);
+	plat_atomic_store_i32(&impl->active_in_buffer_idx, 0);
+	plat_atomic_store_i32(&impl->active_out_buffer_idx, 1);
+	plat_atomic_store_i32(&impl->rt_out_buffer_idx, 0);
+	impl->plc_in_buffer_idx = 0;
 	plat_atomic_store_i32(&impl->last_wkc, 0);
 	plat_atomic_store_i32(&impl->fault_latched, 0);
 	plat_atomic_store_i32(&impl->ec_state, EC_STATE_NONE);
@@ -354,6 +354,38 @@ static void ethercat_copy_iomap_to_in(EthercatDriver_t *impl, uint32_t next_in_i
 	}
 }
 
+static void ethercat_copy_out_buffers(EthercatDriver_t *impl, uint32_t src_idx, uint32_t dst_idx)
+{
+	size_t i;
+
+	if (src_idx == dst_idx)
+	{
+		return;
+	}
+
+	for (i = 0; i < impl->device_count; ++i)
+	{
+		EthercatDevice_t *dev = &impl->devices[i];
+		if (dev->out_size > 0U && dev->out_buffers[src_idx] != NULL && dev->out_buffers[dst_idx] != NULL)
+		{
+			memcpy(dev->out_buffers[dst_idx], dev->out_buffers[src_idx], dev->out_size);
+		}
+	}
+}
+
+static uint32_t ethercat_load_buffer_index(plat_atomic_i32_t *idx_atom, uint32_t fallback)
+{
+	int32_t idx = plat_atomic_load_i32(idx_atom);
+
+	if (idx < 0 || idx > 1)
+	{
+		idx = (int32_t)fallback;
+		plat_atomic_store_i32(idx_atom, idx);
+	}
+
+	return (uint32_t)idx;
+}
+
 static void ethercat_zero_output_buffers(EthercatDriver_t *impl)
 {
 	size_t i;
@@ -403,31 +435,21 @@ static void *ethercat_rt_thread(void *arg)
 		int64_t jitter;
 		bool zero_outputs;
 
-		out_idx = plat_atomic_load_u32(&impl->out_active_idx);
-		if (out_idx > 1U)
-		{
-			out_idx = 0U;
-			plat_atomic_store_u32(&impl->out_active_idx, 0U);
-		}
+		out_idx = ethercat_load_buffer_index(&impl->rt_out_buffer_idx, 0U);
 
 		zero_outputs = plat_atomic_load_i32(&impl->fault_latched) != 0;
-		/* Order required: outputs are visible this cycle and match runtime_sync_backends(). */
+		/* Order required: outputs are visible this cycle and match cycle_end(). */
 		ethercat_copy_out_to_iomap(impl, out_idx, zero_outputs);
 
 		ecx_send_processdata(&impl->ctx);
 		wkc = ecx_receive_processdata(&impl->ctx, EC_TIMEOUTRET);
 		plat_atomic_store_i32(&impl->last_wkc, wkc);
 
-		cur_in = plat_atomic_load_u32(&impl->in_active_idx);
-		if (cur_in > 1U)
-		{
-			cur_in = 0U;
-			plat_atomic_store_u32(&impl->in_active_idx, 0U);
-		}
+		cur_in = ethercat_load_buffer_index(&impl->active_in_buffer_idx, 0U);
 		next_in = 1U - cur_in;
 
 		ethercat_copy_iomap_to_in(impl, next_in);
-		plat_atomic_store_u32(&impl->in_active_idx, next_in);
+		plat_atomic_store_i32(&impl->active_in_buffer_idx, (int32_t)next_in);
 
 		if ((expected_wkc > 0 && wkc < expected_wkc) || plat_atomic_load_i32(&impl->ec_state) != EC_STATE_OPERATIONAL)
 		{
@@ -563,65 +585,52 @@ static int ethercat_process(BackendDriver_t *driver)
 }
 
 /* Buffer model:
- * - RT writes inputs to the next buffer then publishes in_active_idx.
- * - PLC latches plc_in_idx at cycle begin for a stable snapshot.
- * - PLC writes outputs into out_plc_idx; cycle_commit swaps into out_active_idx atomically.
+ * - RT writes inputs to the next buffer then publishes active_in_buffer_idx.
+ * - PLC latches a stable input snapshot in cycle_begin().
+ * - PLC writes outputs into active_out_buffer_idx; cycle_end swaps into rt_out_buffer_idx atomically.
  */
 static void ethercat_cycle_begin(BackendDriver_t *driver)
 {
 	EthercatDriver_t *impl = get_impl(driver);
 	uint32_t in_idx;
+	uint32_t rt_out_idx;
+	uint32_t plc_out_idx;
 
 	if (impl == NULL)
 	{
 		return;
 	}
 
-	in_idx = plat_atomic_load_u32(&impl->in_active_idx);
-	if (in_idx > 1U)
-	{
-		in_idx = 0U;
-		plat_atomic_store_u32(&impl->in_active_idx, 0U);
-	}
+	in_idx = ethercat_load_buffer_index(&impl->active_in_buffer_idx, 0U);
+	impl->plc_in_buffer_idx = (int32_t)in_idx;
 
-	/* Latch the RT-published input buffer for the entire PLC cycle. */
-	plat_atomic_store_u32(&impl->plc_in_idx, in_idx);
+	rt_out_idx = ethercat_load_buffer_index(&impl->rt_out_buffer_idx, 0U);
+	plc_out_idx = ethercat_load_buffer_index(&impl->active_out_buffer_idx, 1U);
+
+	/* Preserve outputs when PLC updates only a subset of fields. */
+	ethercat_copy_out_buffers(impl, rt_out_idx, plc_out_idx);
 }
 
-static void ethercat_cycle_commit(BackendDriver_t *driver)
+static void ethercat_cycle_end(BackendDriver_t *driver)
 {
 	EthercatDriver_t *impl = get_impl(driver);
 	uint32_t plc_out;
-	uint32_t prev_active;
-	uint32_t in_idx;
+	int32_t prev_rt;
 
 	if (impl == NULL)
 	{
 		return;
 	}
 
-	plc_out = plat_atomic_load_u32(&impl->out_plc_idx);
-	if (plc_out > 1U)
-	{
-		plc_out = 0U;
-		plat_atomic_store_u32(&impl->out_plc_idx, 0U);
-	}
+	plc_out = ethercat_load_buffer_index(&impl->active_out_buffer_idx, 1U);
 
-	/* Atomically swap PLC staging buffer into RT-active slot. */
-	prev_active = plat_atomic_exchange_u32(&impl->out_active_idx, plc_out);
-	if (prev_active > 1U)
+	/* Atomically publish PLC staging buffer for RT consumption. */
+	prev_rt = plat_atomic_exchange_i32(&impl->rt_out_buffer_idx, (int32_t)plc_out);
+	if (prev_rt < 0 || prev_rt > 1)
 	{
-		prev_active = (plc_out == 0U) ? 1U : 0U;
+		prev_rt = (plc_out == 0U) ? 1 : 0;
 	}
-	plat_atomic_store_u32(&impl->out_plc_idx, prev_active);
-
-	in_idx = plat_atomic_load_u32(&impl->in_active_idx);
-	if (in_idx > 1U)
-	{
-		in_idx = 0U;
-		plat_atomic_store_u32(&impl->in_active_idx, 0U);
-	}
-	plat_atomic_store_u32(&impl->plc_in_idx, in_idx);
+	plat_atomic_store_i32(&impl->active_out_buffer_idx, prev_rt);
 }
 
 static const uint8_t *ethercat_get_input_data(BackendDriver_t *driver, uint16_t device_index, uint32_t *size_out)
@@ -643,10 +652,10 @@ static const uint8_t *ethercat_get_input_data(BackendDriver_t *driver, uint16_t 
     }
     dev = &impl->devices[device_index];
 
-    idx = plat_atomic_load_u32(&impl->plc_in_idx);
+    idx = (uint32_t)impl->plc_in_buffer_idx;
     if (idx > 1U) {
-        idx = 0U;
-        plat_atomic_store_u32(&impl->plc_in_idx, 0U);
+        idx = ethercat_load_buffer_index(&impl->active_in_buffer_idx, 0U);
+        impl->plc_in_buffer_idx = (int32_t)idx;
     }
 
     if (size_out != NULL) {
@@ -674,11 +683,7 @@ static uint8_t *ethercat_get_output_data(BackendDriver_t *driver, uint16_t devic
     }
     dev = &impl->devices[device_index];
 
-    idx = plat_atomic_load_u32(&impl->out_plc_idx);
-    if (idx > 1U) {
-        idx = 0U;
-        plat_atomic_store_u32(&impl->out_plc_idx, 0U);
-    }
+    idx = ethercat_load_buffer_index(&impl->active_out_buffer_idx, 1U);
 
     if (size_out != NULL) {
         *size_out = dev->out_size;
@@ -693,9 +698,8 @@ static BackendDriverOps_t g_ec_ops = {
     .start = ethercat_start,
     .stop = ethercat_stop,
     .process = ethercat_process,
-    .sync = NULL,
     .cycle_begin = ethercat_cycle_begin,
-    .cycle_commit = ethercat_cycle_commit,
+    .cycle_end = ethercat_cycle_end,
     .get_input_data = ethercat_get_input_data,
     .get_output_data = ethercat_get_output_data,
 };

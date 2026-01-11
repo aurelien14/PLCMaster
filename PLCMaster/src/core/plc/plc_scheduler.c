@@ -27,7 +27,7 @@ int plc_scheduler_init(PlcScheduler_t* s, uint32_t base_cycle_ms)
 	memset(s->pending_ready, 0, sizeof(s->pending_ready));
 	plat_atomic_store_bool(&s->running, false);
 	s->backend_cycle_begin = NULL;
-	s->backend_cycle_commit = NULL;
+	s->backend_cycle_end = NULL;
 	s->backend_user = NULL;
 	s->on_cycle_begin = NULL;
 	s->on_cycle_end = NULL;
@@ -61,7 +61,7 @@ int plc_scheduler_add_task_runtime(PlcScheduler_t* s, const PlcTask_t* task)
 	return plc_scheduler_queue_task(s, task);
 }
 
-int plc_scheduler_set_backend_hooks(PlcScheduler_t* s, void (*cycle_begin)(void *user), void (*cycle_commit)(void *user), void *user)
+int plc_scheduler_set_backend_hooks(PlcScheduler_t* s, void (*cycle_begin)(void *user), void (*cycle_end)(void *user), void *user)
 {
 	if (s == NULL || plat_atomic_load_bool(&s->running))
 	{
@@ -69,7 +69,7 @@ int plc_scheduler_set_backend_hooks(PlcScheduler_t* s, void (*cycle_begin)(void 
 	}
 
 	s->backend_cycle_begin = cycle_begin;
-	s->backend_cycle_commit = cycle_commit;
+	s->backend_cycle_end = cycle_end;
 	s->backend_user = user;
 	return 0;
 }
@@ -89,9 +89,9 @@ int plc_scheduler_set_callbacks(PlcScheduler_t* s, void (*on_cycle_begin)(void *
 		s->backend_cycle_begin = on_cycle_begin;
 		s->backend_user = user;
 	}
-	if (s->backend_cycle_commit == NULL)
+	if (s->backend_cycle_end == NULL)
 	{
-		s->backend_cycle_commit = on_cycle_end;
+		s->backend_cycle_end = on_cycle_end;
 		s->backend_user = user;
 	}
 	return 0;
@@ -227,14 +227,14 @@ static void *plc_scheduler_thread(void *arg)
 			}
 		}
 
-		if (s->on_cycle_end != NULL && s->on_cycle_end != s->backend_cycle_commit)
+		if (s->on_cycle_end != NULL && s->on_cycle_end != s->backend_cycle_end)
 		{
 			s->on_cycle_end(s->user);
 		}
 
-		if (s->backend_cycle_commit != NULL)
+		if (s->backend_cycle_end != NULL)
 		{
-			s->backend_cycle_commit(s->backend_user);
+			s->backend_cycle_end(s->backend_user);
 		}
 
 		next_tick_ms += s->base_cycle_ms;

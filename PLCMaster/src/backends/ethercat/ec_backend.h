@@ -51,15 +51,14 @@ typedef struct EthercatDriver
 	plat_atomic_i32_t fault_latched;
 	plat_atomic_i32_t ec_state;
 	/* Buffer indices:
-	 * - in_active_idx: RT publishes newest input snapshot.
-	 * - plc_in_idx: PLC stable snapshot for the current cycle.
-	 * - out_active_idx: RT consumes outputs from this buffer.
-	 * - out_plc_idx: PLC staging buffer committed atomically.
+	 * - active_in_buffer_idx: RT publishes newest input snapshot.
+	 * - active_out_buffer_idx: PLC staging outputs for the next cycle.
+	 * - rt_out_buffer_idx: RT consumes outputs from this buffer.
 	 */
-	plat_atomic_u32_t in_active_idx;
-	plat_atomic_u32_t plc_in_idx;
-	plat_atomic_u32_t out_active_idx;
-	plat_atomic_u32_t out_plc_idx;
+	plat_atomic_i32_t active_in_buffer_idx;
+	plat_atomic_i32_t active_out_buffer_idx;
+	plat_atomic_i32_t rt_out_buffer_idx;
+	int32_t plc_in_buffer_idx;
 	plat_atomic_bool_t in_op;
 	plat_atomic_u64_t rt_cycle_count;
 	plat_atomic_u64_t rt_overruns;
