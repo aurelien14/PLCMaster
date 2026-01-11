@@ -28,12 +28,11 @@ typedef struct BackendDriverOps
 	int (*start)(BackendDriver_t *driver);
 	int (*stop)(BackendDriver_t *driver);
 	int (*process)(BackendDriver_t *driver);
-	void (*sync)(BackendDriver_t *driver);
 	void (*cycle_begin)(BackendDriver_t *driver);
-	void (*cycle_commit)(BackendDriver_t *driver);
+	void (*cycle_end)(BackendDriver_t *driver);
 	/* Input data is a stable snapshot for the current cycle. */
 	const uint8_t *(*get_input_data)(BackendDriver_t *driver, uint16_t device_index, uint32_t *size_out);
-	/* Output data is a staging buffer applied on the next sync. */
+	/* Output data is a staging buffer applied on the next cycle_end. */
 	uint8_t *(*get_output_data)(BackendDriver_t *driver, uint16_t device_index, uint32_t *size_out);
 } BackendDriverOps_t;
 

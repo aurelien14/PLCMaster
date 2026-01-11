@@ -21,7 +21,7 @@ typedef struct
 	PlcTask_t		pending_tasks[32];
 	plat_atomic_bool_t	running;
 	void			(*backend_cycle_begin)(void *user);
-	void			(*backend_cycle_commit)(void *user);
+	void			(*backend_cycle_end)(void *user);
 	void			*backend_user;
 	void			(*on_cycle_begin)(void *user);
 	void			(*on_cycle_end)(void *user);
@@ -32,7 +32,7 @@ typedef struct
 int plc_scheduler_init(PlcScheduler_t* s, uint32_t base_cycle_ms);
 int plc_scheduler_add_task(PlcScheduler_t* s, const PlcTask_t* task);
 int plc_scheduler_add_task_runtime(PlcScheduler_t* s, const PlcTask_t* task);
-int plc_scheduler_set_backend_hooks(PlcScheduler_t* s, void (*cycle_begin)(void *user), void (*cycle_commit)(void *user), void *user);
+int plc_scheduler_set_backend_hooks(PlcScheduler_t* s, void (*cycle_begin)(void *user), void (*cycle_end)(void *user), void *user);
 int plc_scheduler_set_callbacks(PlcScheduler_t* s, void (*on_cycle_begin)(void *user), void (*on_cycle_end)(void *user), void *user);
 int plc_scheduler_start(PlcScheduler_t* s);
 int plc_scheduler_stop(PlcScheduler_t* s);

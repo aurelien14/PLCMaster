@@ -75,13 +75,9 @@ void runtime_backends_sync_outputs(Runtime_t* rt)
 		{
 			continue;
 		}
-		if (drv->ops->cycle_commit != NULL)
+		if (drv->ops->cycle_end != NULL)
 		{
-			drv->ops->cycle_commit(drv);
-		}
-		else if (drv->ops->sync != NULL)
-		{
-			drv->ops->sync(drv);
+			drv->ops->cycle_end(drv);
 		}
 	}
 }
