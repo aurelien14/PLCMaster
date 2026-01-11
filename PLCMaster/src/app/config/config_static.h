@@ -26,6 +26,9 @@ typedef struct BackendConfig
 	int rt_affinity_cpu;	/* -1 = none */
 	int rt_reserved_cpu;	/* shared default for EtherCAT RT affinity */
 	uint32_t rt_timer_resolution_ms;
+	uint32_t wkc_fail_threshold;
+	uint32_t warmup_cycles;
+	uint32_t state_check_period_ms;
 } BackendConfig_t;
 
 typedef struct DeviceConfig
