@@ -4,7 +4,10 @@
 
 #include "app/app.h"
 #include "core/plc/plc_task.h"
+#include "app/plc/plc_task_ctx.h"
 #include "app/plc/plc_tasks.h"
+
+static PlcTaskCtx_t g_task_ctx;
 
 const SystemConfig_t *app_get_config(void)
 {
@@ -39,11 +42,14 @@ int app_register_tasks(PlcScheduler_t *sched, Runtime_t *rt, PlcApp_t *app)
 		return 0;
 	}
 
+	g_task_ctx.rt = rt;
+	g_task_ctx.app = app;
+
 	for (task_index = 0; task_index < task_count; ++task_index)
 	{
 		const PLC_TaskDesc_t *task_desc = &tasks[task_index];
 		PlcTask_t task;
-		void *task_ctx = rt;
+		void *task_ctx = &g_task_ctx;
 
 		if (task_desc->name == NULL || task_desc->run == NULL)
 		{

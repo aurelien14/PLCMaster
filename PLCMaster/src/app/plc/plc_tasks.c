@@ -1,8 +1,9 @@
 /* PLC task registry implementation. */
 
-#include "app/plc/plc_tasks.h"
 #include <stdbool.h>
-#include "core/runtime/runtime.h"
+
+#include "app/plc/plc_task_ctx.h"
+#include "app/plc/plc_tasks.h"
 #include "core/tag/tag_api.h"
 
 static int plc_task_noop(void* ctx)
@@ -13,23 +14,14 @@ static int plc_task_noop(void* ctx)
 
 static int plc_task_heartbeat(void* ctx)
 {
-	Runtime_t * rt = (Runtime_t*)ctx;
+	PlcTaskCtx_t *c = (PlcTaskCtx_t*)ctx;
 	static bool state = false;
-	static TagId_t x15_id = 0;
-	if (rt == NULL)
-		return -1;
-	/* Résolution lazy (1 seule fois) */
-	if (x15_id == 0)
+	if (c == NULL || c->rt == NULL || c->app == NULL)
 	{
-		x15_id = tag_table_find_id(&rt->tag_table, "CPU_IO.X12_Out0");
-		if (x15_id == 0)
-		{
-			/* Le bind IOView n’est peut-être pas complet, ou le tag n’existe pas */
-			return -2;
-		}
+		return -1;
 	}
 	state = !state;
-	return tag_write_bool(rt, x15_id, state);
+	return tag_write_bool(c->rt, c->app->io.X15_Out0, state);
 }
 
 static const PLC_TaskDesc_t kPlcTasks[] = {
