@@ -2,29 +2,30 @@
 
 #include <string.h>
 
-#include "app/app.h"
+#include "app/user_entry.h"
+#include "app/io/io_bind.h"
 #include "core/plc/plc_task.h"
 #include "app/plc/plc_task_ctx.h"
 #include "app/plc/plc_tasks.h"
 
 static PlcTaskCtx_t g_task_ctx;
 
-const SystemConfig_t *app_get_config(void)
+const SystemConfig_t *user_get_config(void)
 {
 	return get_static_config();
 }
 
-int app_bind(PlcApp_t *app, Runtime_t *rt)
+int user_bind(PlcApp_t *app, Runtime_t *rt)
 {
 	if (app == NULL || rt == NULL)
 	{
 		return -1;
 	}
 
-	return plc_app_bind(app, &rt->tag_table);
+	return io_view_bind(&app->io, &rt->tag_table);
 }
 
-int app_register_tasks(PlcScheduler_t *sched, Runtime_t *rt, PlcApp_t *app)
+int user_register_plc_tasks(PlcScheduler_t *sched, Runtime_t *rt, PlcApp_t *app)
 {
 	const PLC_TaskDesc_t *tasks;
 	size_t task_count;

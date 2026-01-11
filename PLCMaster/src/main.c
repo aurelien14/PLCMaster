@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "core/runtime/runtime.h"
-#include "app/app.h"
+#include "app/user_entry.h"
 #include "core/plc/plc_scheduler.h"
 #include "system/builder/system_builder.h"
 #include "app/plc/plc_runtime.h"
@@ -41,12 +41,12 @@ int main(void)
 	runtime_init(&rt);
 	memset(&app, 0, sizeof(app));
 
-	const SystemConfig_t *cfg = app_get_config();
+	const SystemConfig_t *cfg = user_get_config();
 	int rc = system_build(&rt, cfg);
 
 	if (rc == 0)
 	{
-		rc = app_bind(&app, &rt);
+		rc = user_bind(&app, &rt);
 	}
 
 	if (rc == 0)
@@ -61,7 +61,7 @@ int main(void)
 
 	if (rc == 0)
 	{
-		rc = app_register_tasks(&sched, &rt, &app);
+		rc = user_register_plc_tasks(&sched, &rt, &app);
 	}
 
 	if (rc == 0)

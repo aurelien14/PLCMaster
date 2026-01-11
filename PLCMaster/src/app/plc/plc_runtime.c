@@ -1,53 +1,12 @@
 /* PLC runtime orchestration. */
 
-#include <inttypes.h>
 #include <stdio.h>
 
 #include "core/platform/platform_thread.h"
-#include "core/platform/platform_atomic.h"
 #include "core/plc/plc_scheduler.h"
 #include "core/runtime/runtime.h"
-#include "backends/ethercat/ec_backend.h"
+#include "app/diag/ethercat_diag.h"
 #include "app/plc/plc_runtime.h"
-
-static void log_ethercat_debug(const BackendDriver_t *drv)
-{
-	EthercatDriver_t *impl;
-
-	if (drv == NULL || drv->type != BACKEND_TYPE_ETHERCAT || drv->impl == NULL)
-	{
-		return;
-	}
-
-	impl = (EthercatDriver_t *)drv->impl;
-
-	printf("[EC] last_wkc=%d in_op=%s fault_latched=%d rt_overruns=%" PRIu64 " jitter_ns=%" PRIu64 " jitter_max_ns=%" PRIu64 "\n",
-		plat_atomic_load_i32(&impl->last_wkc),
-		plat_atomic_load_bool(&impl->in_op) ? "true" : "false",
-		plat_atomic_load_i32(&impl->fault_latched),
-		plat_atomic_load_u64(&impl->rt_overruns),
-		plat_atomic_load_u64(&impl->rt_jitter_current_ns),
-		plat_atomic_load_u64(&impl->rt_jitter_max_ns));
-}
-
-static void log_backend_debug(const Runtime_t *rt)
-{
-	size_t i;
-
-	if (rt == NULL || rt->backends == NULL)
-	{
-		return;
-	}
-
-	for (i = 0; i < rt->backend_count; ++i)
-	{
-		const BackendDriver_t *drv = &rt->backends[i];
-		if (drv->type == BACKEND_TYPE_ETHERCAT)
-		{
-			log_ethercat_debug(drv);
-		}
-	}
-}
 
 int plc_runtime_run(Runtime_t *rt, PlcScheduler_t *sched)
 {
@@ -66,7 +25,7 @@ int plc_runtime_run(Runtime_t *rt, PlcScheduler_t *sched)
 
 		while (elapsed_ms < 3000000)
 		{
-			log_backend_debug(rt);
+			ethercat_diag_print(rt);
 			plat_thread_sleep_ms(1000);
 			elapsed_ms += 1000;
 		}
