@@ -3,6 +3,7 @@
 #ifndef BACKEND_IFACE_H
 #define BACKEND_IFACE_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -19,6 +20,13 @@ typedef enum BackendType
 #define MAX_BACKENDS 4
 
 typedef struct BackendDriver BackendDriver_t;
+
+typedef struct BackendStatus
+{
+	bool in_op;
+	bool fault_latched;
+	int32_t last_error;
+} BackendStatus_t;
 
 typedef struct BackendDriverOps
 {
@@ -44,5 +52,7 @@ struct BackendDriver
 	char system_name[16];
 	void *impl;
 };
+
+int backend_get_status(const BackendDriver_t *drv, BackendStatus_t *out);
 
 #endif /* BACKEND_IFACE_H */

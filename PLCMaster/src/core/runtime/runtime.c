@@ -87,3 +87,37 @@ void runtime_backends_process_nonrt(Runtime_t* rt)
 	/* Placeholder for future non-RT backend work. */
 	(void)rt;
 }
+
+PlcHealthLevel_t runtime_get_health_level(const Runtime_t* rt)
+{
+	size_t i;
+	PlcHealthLevel_t level = PLC_HEALTH_OK;
+
+	if (rt == NULL || rt->backends == NULL)
+	{
+		return PLC_HEALTH_OK;
+	}
+
+	for (i = 0; i < rt->backend_count; ++i)
+	{
+		const BackendDriver_t *drv = &rt->backends[i];
+		BackendStatus_t status;
+
+		if (backend_get_status(drv, &status) != 0)
+		{
+			continue;
+		}
+
+		if (status.fault_latched)
+		{
+			return PLC_HEALTH_FAULT;
+		}
+
+		if (!status.in_op)
+		{
+			level = PLC_HEALTH_WARN;
+		}
+	}
+
+	return level;
+}
