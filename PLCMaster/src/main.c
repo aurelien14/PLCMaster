@@ -51,7 +51,7 @@ int main(void)
 
 	if (rc == 0)
 	{
-		rc = plc_scheduler_init(&sched, 10);
+		rc = plc_scheduler_init(&sched, cfg->plc_base_cycle_ms);
 	}
 
 	if (rc == 0)

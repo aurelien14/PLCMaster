@@ -81,6 +81,7 @@ static const SystemConfig_t kStaticConfig = {
 	.process_var_count = sizeof(kProcessVarDescs) / sizeof(kProcessVarDescs[0]),
 	.hmi_tags = kHmiTagDescs,
 	.hmi_tag_count = sizeof(kHmiTagDescs) / sizeof(kHmiTagDescs[0]),
+	.plc_base_cycle_ms = 10,
 };
 
 const SystemConfig_t *get_static_config(void)
