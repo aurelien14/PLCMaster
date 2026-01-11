@@ -14,6 +14,9 @@
 #define EC_MAX_IFNAME_LEN 63
 #define EC_DEFAULT_PERIOD_NS 1000000ULL
 #define EC_DEFAULT_SPIN_THRESHOLD_NS 50000U
+#define EC_DEFAULT_WKC_FAIL_THRESHOLD 10U
+#define EC_DEFAULT_WARMUP_CYCLES 20U
+#define EC_DEFAULT_STATE_CHECK_PERIOD_MS 200U
 
 static BackendDriverOps_t g_ec_ops;
 
@@ -137,6 +140,19 @@ BackendDriver_t *ethercat_backend_create(const BackendConfig_t *cfg, size_t ioma
 	impl->dc_clock = cfg->dc_clock;
 	impl->iomap_size = iomap_size;
 	impl->perf_freq = 0U;
+	impl->wkc_fail_threshold = cfg->wkc_fail_threshold != 0U ? cfg->wkc_fail_threshold : EC_DEFAULT_WKC_FAIL_THRESHOLD;
+	impl->warmup_cycles = cfg->warmup_cycles != 0U ? cfg->warmup_cycles : EC_DEFAULT_WARMUP_CYCLES;
+	impl->state_check_period_ms = cfg->state_check_period_ms != 0U ? cfg->state_check_period_ms : EC_DEFAULT_STATE_CHECK_PERIOD_MS;
+	{
+		uint64_t cycles = ((uint64_t)impl->state_check_period_ms * 1000000ULL) / impl->period_ns;
+		if (cycles == 0ULL)
+		{
+			cycles = 1ULL;
+		}
+		impl->state_check_period_cycles = (uint32_t)cycles;
+	}
+	impl->dowkccheck = 0U;
+	impl->state_check_cycle_ctr = 0U;
 	plat_atomic_store_bool(&impl->in_op, false);
 
 	if (ec_soem_context_init(&impl->ctx, impl->ifname) != 0)
@@ -417,6 +433,8 @@ static void *ethercat_rt_thread(void *arg)
 {
 	EthercatDriver_t *impl = (EthercatDriver_t *)arg;
 	int expected_wkc = (int)impl->expected_wkc;
+	uint32_t wkc_fail_threshold = impl->wkc_fail_threshold != 0U ? impl->wkc_fail_threshold : 1U;
+	uint64_t cycle_count = 0U;
 	uint64_t deadline = plat_time_monotonic_ns() + impl->period_ns;
 
 	plat_atomic_store_bool(&impl->rt_is_running, true);
@@ -432,10 +450,13 @@ static void *ethercat_rt_thread(void *arg)
 		uint32_t cur_in;
 		uint32_t next_in;
 		int wkc;
+		int ec_state;
 		uint64_t now_ns;
 		int64_t delta;
 		uint64_t jitter_abs;
 		uint64_t lateness;
+		bool bad_cycle;
+		bool in_op;
 		bool zero_outputs;
 
 		out_idx = ethercat_load_buffer_index(&impl->rt_out_buffer_idx, 0U);
@@ -448,22 +469,51 @@ static void *ethercat_rt_thread(void *arg)
 		wkc = ecx_receive_processdata(&impl->ctx, EC_TIMEOUTRET);
 		plat_atomic_store_i32(&impl->last_wkc, wkc);
 
+		/* Periodic state watchdog (lightweight, no recovery). */
+		if (++impl->state_check_cycle_ctr >= impl->state_check_period_cycles)
+		{
+			impl->state_check_cycle_ctr = 0U;
+			ecx_readstate(&impl->ctx);
+			plat_atomic_store_i32(&impl->ec_state, impl->ctx.slavelist[0].state);
+		}
+
 		cur_in = ethercat_load_buffer_index(&impl->active_in_buffer_idx, 0U);
 		next_in = 1U - cur_in;
 
 		ethercat_copy_iomap_to_in(impl, next_in);
 		plat_atomic_store_i32(&impl->active_in_buffer_idx, (int32_t)next_in);
 
-		if ((expected_wkc > 0 && wkc < expected_wkc) || plat_atomic_load_i32(&impl->ec_state) != EC_STATE_OPERATIONAL)
+		/* Track consecutive bad cycles before latching a fault. */
+		ec_state = plat_atomic_load_i32(&impl->ec_state);
+		bad_cycle = (expected_wkc > 0 && wkc < expected_wkc) || (ec_state != EC_STATE_OPERATIONAL);
+		if (cycle_count < impl->warmup_cycles)
+		{
+			bad_cycle = false;
+		}
+
+		if (bad_cycle)
+		{
+			if (impl->dowkccheck < UINT32_MAX)
+			{
+				impl->dowkccheck++;
+			}
+		}
+		else
+		{
+			impl->dowkccheck = 0U;
+		}
+
+		if (impl->dowkccheck >= wkc_fail_threshold)
 		{
 			if (plat_atomic_exchange_i32(&impl->fault_latched, 1) == 0)
 			{
 				printf("[EC] Fault latched: WKC below expected (%d < %d) or state left OP\n", wkc, expected_wkc);
 				ethercat_zero_output_buffers(impl);
 			}
-			plat_atomic_store_bool(&impl->in_op, false);
 			zero_outputs = true;
 		}
+		in_op = (impl->dowkccheck == 0U) && (ec_state == EC_STATE_OPERATIONAL);
+		plat_atomic_store_bool(&impl->in_op, in_op);
 
 		plat_time_sleep_until_ns(deadline, impl->spin_threshold_ns);
 		now_ns = plat_time_monotonic_ns();
@@ -492,6 +542,7 @@ static void *ethercat_rt_thread(void *arg)
 		{
 			deadline += impl->period_ns;
 		}
+		++cycle_count;
 		(void)plat_atomic_fetch_add_u64(&impl->rt_cycle_count, 1ULL);
 	}
 
@@ -537,6 +588,8 @@ static int ethercat_start(BackendDriver_t *driver)
 		printf("Warning: WKC %d below expected %u during startup\n", wkc, (unsigned)impl->expected_wkc);
 	}
 
+	impl->dowkccheck = 0U;
+	impl->state_check_cycle_ctr = 0U;
 	plat_atomic_store_bool(&impl->in_op, true);
 	plat_atomic_store_i32(&impl->fault_latched, 0);
 	plat_atomic_store_bool(&impl->rt_should_run, true);

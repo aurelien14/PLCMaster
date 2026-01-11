@@ -50,6 +50,12 @@ typedef struct EthercatDriver
 	plat_atomic_i32_t last_wkc;
 	plat_atomic_i32_t fault_latched;
 	plat_atomic_i32_t ec_state;
+	uint32_t dowkccheck;
+	uint32_t wkc_fail_threshold;
+	uint32_t warmup_cycles;
+	uint32_t state_check_period_cycles;
+	uint32_t state_check_period_ms;
+	uint32_t state_check_cycle_ctr;
 	/* Buffer indices:
 	 * - active_in_buffer_idx: RT publishes newest input snapshot.
 	 * - active_out_buffer_idx: PLC staging outputs for the next cycle.
