@@ -63,6 +63,11 @@ int user_register_plc_tasks(PlcScheduler_t *sched, Runtime_t *rt, PlcApp_t *app)
 		task.ctx = task_ctx;
 		task.period_ms = task_desc->period_ms;
 		task.phase_ms = 0;
+		task.policy = PLC_TASK_SKIP_ON_FAULT;
+		if (task_desc->policy == PLC_TASK_ALWAYS_RUN || task_desc->policy == PLC_TASK_SKIP_ON_FAULT || task_desc->policy == PLC_TASK_ONLY_WHEN_OK)
+		{
+			task.policy = task_desc->policy;
+		}
 
 		rc = plc_scheduler_add_task(sched, &task);
 		if (rc != 0)
