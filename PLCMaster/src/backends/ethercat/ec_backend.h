@@ -62,6 +62,7 @@ typedef struct EthercatDriver
 	plat_atomic_bool_t in_op;
 	plat_atomic_u64_t rt_cycle_count;
 	plat_atomic_u64_t rt_overruns;
+	plat_atomic_i64_t rt_jitter_current_ns;
 	plat_atomic_i64_t rt_jitter_min_ns;
 	plat_atomic_i64_t rt_jitter_max_ns;
 } EthercatDriver_t;
