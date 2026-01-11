@@ -410,6 +410,10 @@ static void *ethercat_rt_thread(void *arg)
 			plat_atomic_store_u32(&impl->out_active_idx, 0U);
 		}
 
+		zero_outputs = plat_atomic_load_i32(&impl->fault_latched) != 0;
+		/* Order required: outputs are visible this cycle and match runtime_sync_backends(). */
+		ethercat_copy_out_to_iomap(impl, out_idx, zero_outputs);
+
 		ecx_send_processdata(&impl->ctx);
 		wkc = ecx_receive_processdata(&impl->ctx, EC_TIMEOUTRET);
 		plat_atomic_store_i32(&impl->last_wkc, wkc);
@@ -425,7 +429,6 @@ static void *ethercat_rt_thread(void *arg)
 		ethercat_copy_iomap_to_in(impl, next_in);
 		plat_atomic_store_u32(&impl->in_active_idx, next_in);
 
-		zero_outputs = plat_atomic_load_i32(&impl->fault_latched) != 0;
 		if ((expected_wkc > 0 && wkc < expected_wkc) || plat_atomic_load_i32(&impl->ec_state) != EC_STATE_OPERATIONAL)
 		{
 			if (plat_atomic_exchange_i32(&impl->fault_latched, 1) == 0)
@@ -436,8 +439,6 @@ static void *ethercat_rt_thread(void *arg)
 			plat_atomic_store_bool(&impl->in_op, false);
 			zero_outputs = true;
 		}
-
-		ethercat_copy_out_to_iomap(impl, out_idx, zero_outputs);
 
 		now_ns = plat_time_monotonic_ns();
 		jitter = (int64_t)(now_ns - deadline);
