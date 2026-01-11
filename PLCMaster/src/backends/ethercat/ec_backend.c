@@ -294,6 +294,7 @@ static int ethercat_finalize_mapping(BackendDriver_t *driver)
 	plat_atomic_store_bool(&impl->rt_is_running, false);
 	plat_atomic_store_u64(&impl->rt_cycle_count, 0ULL);
 	plat_atomic_store_u64(&impl->rt_overruns, 0ULL);
+	plat_atomic_store_i64(&impl->rt_jitter_current_ns, 0);
 	plat_atomic_store_i64(&impl->rt_jitter_min_ns, INT64_MAX);
 	plat_atomic_store_i64(&impl->rt_jitter_max_ns, INT64_MIN);
 	impl->rt_cycle_us = (uint32_t)(impl->period_ns / 1000ULL);
@@ -432,7 +433,7 @@ static void *ethercat_rt_thread(void *arg)
 		uint32_t next_in;
 		int wkc;
 		uint64_t now_ns;
-		int64_t jitter;
+		int64_t lateness_ns;
 		bool zero_outputs;
 
 		out_idx = ethercat_load_buffer_index(&impl->rt_out_buffer_idx, 0U);
@@ -462,17 +463,19 @@ static void *ethercat_rt_thread(void *arg)
 			zero_outputs = true;
 		}
 
+		plat_time_sleep_until_ns(deadline, impl->spin_threshold_ns);
 		now_ns = plat_time_monotonic_ns();
-		jitter = (int64_t)(now_ns - deadline);
-		if (jitter < plat_atomic_load_i64(&impl->rt_jitter_min_ns))
+		lateness_ns = (now_ns > deadline) ? (int64_t)(now_ns - deadline) : 0;
+		plat_atomic_store_i64(&impl->rt_jitter_current_ns, lateness_ns);
+		if (lateness_ns < plat_atomic_load_i64(&impl->rt_jitter_min_ns))
 		{
-			plat_atomic_store_i64(&impl->rt_jitter_min_ns, jitter);
+			plat_atomic_store_i64(&impl->rt_jitter_min_ns, lateness_ns);
 		}
-		if (jitter > plat_atomic_load_i64(&impl->rt_jitter_max_ns))
+		if (lateness_ns > plat_atomic_load_i64(&impl->rt_jitter_max_ns))
 		{
-			plat_atomic_store_i64(&impl->rt_jitter_max_ns, jitter);
+			plat_atomic_store_i64(&impl->rt_jitter_max_ns, lateness_ns);
 		}
-		if (jitter > 0)
+		if (lateness_ns > 0)
 		{
 			(void)plat_atomic_fetch_add_u64(&impl->rt_overruns, 1ULL);
 		}
@@ -481,9 +484,10 @@ static void *ethercat_rt_thread(void *arg)
 		{
 			deadline = now_ns + impl->period_ns;
 		}
-
-		plat_time_sleep_until_ns(deadline, impl->spin_threshold_ns);
-		deadline += impl->period_ns;
+		else
+		{
+			deadline += impl->period_ns;
+		}
 		(void)plat_atomic_fetch_add_u64(&impl->rt_cycle_count, 1ULL);
 	}
 
@@ -535,6 +539,7 @@ static int ethercat_start(BackendDriver_t *driver)
 	plat_atomic_store_bool(&impl->rt_is_running, false);
 	plat_atomic_store_u64(&impl->rt_cycle_count, 0ULL);
 	plat_atomic_store_u64(&impl->rt_overruns, 0ULL);
+	plat_atomic_store_i64(&impl->rt_jitter_current_ns, 0);
 	plat_atomic_store_i64(&impl->rt_jitter_min_ns, INT64_MAX);
 	plat_atomic_store_i64(&impl->rt_jitter_max_ns, INT64_MIN);
 	if (plat_thread_create_ex(&impl->rt_thread, ethercat_rt_thread, impl, &impl->rt_params) != 0)
