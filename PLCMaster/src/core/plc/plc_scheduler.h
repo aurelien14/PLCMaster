@@ -10,6 +10,13 @@
 #include "core/platform/platform_thread.h"
 #include "core/plc/plc_task.h"
 
+typedef enum PlcHealthLevel
+{
+	PLC_HEALTH_OK = 0,
+	PLC_HEALTH_WARN = 1,
+	PLC_HEALTH_FAULT = 2
+} PlcHealthLevel_t;
+
 typedef struct
 {
 	uint32_t		base_cycle_ms;
@@ -20,6 +27,7 @@ typedef struct
 	plat_atomic_bool_t	pending_ready[32];
 	PlcTask_t		pending_tasks[32];
 	plat_atomic_bool_t	running;
+	plat_atomic_i32_t	health_level;
 	void			(*backend_cycle_begin)(void *user);
 	void			(*backend_cycle_end)(void *user);
 	void			*backend_user;
@@ -34,6 +42,7 @@ int plc_scheduler_add_task(PlcScheduler_t* s, const PlcTask_t* task);
 int plc_scheduler_add_task_runtime(PlcScheduler_t* s, const PlcTask_t* task);
 int plc_scheduler_set_backend_hooks(PlcScheduler_t* s, void (*cycle_begin)(void *user), void (*cycle_end)(void *user), void *user);
 int plc_scheduler_set_callbacks(PlcScheduler_t* s, void (*on_cycle_begin)(void *user), void (*on_cycle_end)(void *user), void *user);
+void plc_scheduler_set_health(PlcScheduler_t* s, PlcHealthLevel_t level);
 int plc_scheduler_start(PlcScheduler_t* s);
 int plc_scheduler_stop(PlcScheduler_t* s);
 bool plc_scheduler_is_running(const PlcScheduler_t* s);

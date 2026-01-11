@@ -26,6 +26,7 @@ int plc_scheduler_init(PlcScheduler_t* s, uint32_t base_cycle_ms)
 	plat_atomic_store_u32(&s->pending_read, 0U);
 	memset(s->pending_ready, 0, sizeof(s->pending_ready));
 	plat_atomic_store_bool(&s->running, false);
+	plat_atomic_store_i32(&s->health_level, PLC_HEALTH_OK);
 	s->backend_cycle_begin = NULL;
 	s->backend_cycle_end = NULL;
 	s->backend_user = NULL;
@@ -95,6 +96,16 @@ int plc_scheduler_set_callbacks(PlcScheduler_t* s, void (*on_cycle_begin)(void *
 		s->backend_user = user;
 	}
 	return 0;
+}
+
+void plc_scheduler_set_health(PlcScheduler_t* s, PlcHealthLevel_t level)
+{
+	if (s == NULL)
+	{
+		return;
+	}
+
+	plat_atomic_store_i32(&s->health_level, (int32_t)level);
 }
 
 int plc_scheduler_start(PlcScheduler_t* s)
@@ -209,6 +220,8 @@ static void *plc_scheduler_thread(void *arg)
 		{
 			PlcTask_t* task = &s->tasks[i];
 			uint64_t task_start_ms = start_ms + task->phase_ms;
+			int health = plat_atomic_load_i32(&s->health_level);
+			bool allow_run = true;
 
 			if (now_ms >= task_start_ms && (now_ms - (uint64_t)task->last_run_ms) >= task->period_ms)
 			{
@@ -219,10 +232,18 @@ static void *plc_scheduler_thread(void *arg)
 					task->last_run_ms += task->period_ms;
 				}
 
-				rc = task->fn(task->ctx);
-				if (rc != 0)
+				if (health == PLC_HEALTH_FAULT)
 				{
-					printf("[PLC] task %s rc=%d\n", task->name ? task->name : "(null)", rc);
+					allow_run = (task->policy == PLC_TASK_ALWAYS_RUN);
+				}
+
+				if (allow_run)
+				{
+					rc = task->fn(task->ctx);
+					if (rc != 0)
+					{
+						printf("[PLC] task %s rc=%d\n", task->name ? task->name : "(null)", rc);
+					}
 				}
 			}
 		}

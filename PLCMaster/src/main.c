@@ -29,6 +29,7 @@ static void plc_cycle_begin(void *user)
 		return;
 	}
 
+	/* TODO: map backend health state to plc_scheduler_set_health(). */
 	runtime_backends_cycle_begin(rt);
 }
 
@@ -52,6 +53,11 @@ int main(void)
 	if (rc == 0)
 	{
 		rc = plc_scheduler_init(&sched, cfg->plc_scheduler_base_cycle_ms);
+	}
+
+	if (rc == 0)
+	{
+		plc_scheduler_set_health(&sched, PLC_HEALTH_OK);
 	}
 
 	if (rc == 0)

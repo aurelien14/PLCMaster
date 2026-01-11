@@ -29,11 +29,13 @@ static const PLC_TaskDesc_t kPlcTasks[] = {
 		.name = "noop",
 		.run = plc_task_noop,
 		.period_ms = 1000U,
+		.policy = PLC_TASK_SKIP_ON_FAULT,
 	},
 	{
 		.name = "heartbeat",
 		.run = plc_task_heartbeat,
 		.period_ms = 500U,
+		.policy = PLC_TASK_ALWAYS_RUN,
 	},
 };
 
