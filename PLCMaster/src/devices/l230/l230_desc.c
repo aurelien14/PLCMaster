@@ -41,7 +41,7 @@ static const TagDesc_t L230_TAGS[] = {
     { "X9_Out6", TAGDIR_OUT, TAG_T_BOOL, (uint32_t)offsetof(L230_RX_PDO_t, L230_DO_Byte1), 6, NULL, NULL },
     { "X8a_Out7", TAGDIR_OUT, TAG_T_BOOL, (uint32_t)offsetof(L230_RX_PDO_t, L230_DO_Byte1), 7, NULL, NULL },
     { "X21_CPU_Pt1_Ctrl", TAGDIR_OUT, TAG_T_U32, (uint32_t)offsetof(L230_RX_PDO_t, X21_CPU_Pt1_Ctrl), 0, NULL, NULL },
-    { "X21_CPU_Pt2_Ctrl", TAGDIR_OUT, TAG_T_U32, (uint32_t)offsetof(L230_RX_PDO_t, X21_CPU_Pt2_Ctrl), 0, NULL, NULL },
+    { "X22_CPU_Pt2_Ctrl", TAGDIR_OUT, TAG_T_U32, (uint32_t)offsetof(L230_RX_PDO_t, X22_CPU_Pt2_Ctrl), 0, NULL, NULL },
     { "X23_CPU_VC1_Ctrl", TAGDIR_OUT, TAG_T_U32, (uint32_t)offsetof(L230_RX_PDO_t, X23_CPU_VC1_Ctrl), 0, NULL, NULL },
 };
 
@@ -55,8 +55,8 @@ static void config_hook_EL230(ecx_contextt* ctx, uint16_t slave)
     pslave->SM[3].SMflags = 0x20;
 
     uint16_t new_timeout = 1000;
-    ecx_FPWRw(&ctx->port, pslave->configadr, 0x420,
-        new_timeout, EC_TIMEOUTRET);
+    //ecx_FPWRw(&ctx->port, pslave->configadr, 0x420,
+        //new_timeout, EC_TIMEOUTRET);
 }
 
 const DeviceDesc_t DEVICE_DESC_L230 = {

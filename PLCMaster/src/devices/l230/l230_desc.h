@@ -45,9 +45,9 @@ typedef struct
 	// RxPDO 0x1602 - X21_CPU_Pt1
 	uint32_t X21_CPU_Pt1_Ctrl;
 	// RxPDO 0x1603 - X21_CPU_Pt2
-	uint32_t X21_CPU_Pt2_Ctrl;
+	uint32_t X22_CPU_Pt2_Ctrl;
 	// RxPDO 0x1604 - X21_CPU_VC1
-	uint32_t X23_CPU_VC1_Ctrl;
+	uint32_t X23_CPU_VC1_Ctrl; //<Comment>16#80000000 = Channel Off
 } L230_RX_PDO_t;
 #pragma pack(pop)
 
