@@ -78,6 +78,7 @@ typedef struct SystemConfig
 	size_t process_var_count;
 	const HmiTagDesc_t *hmi_tags;
 	size_t hmi_tag_count;
+	uint32_t plc_scheduler_base_cycle_ms;	/* PLC scheduler base tick (ms) */
 } SystemConfig_t;
 
 const SystemConfig_t *get_static_config(void);
