@@ -36,6 +36,7 @@ typedef struct BackendDriverOps
 	int (*start)(BackendDriver_t *driver);
 	int (*stop)(BackendDriver_t *driver);
 	int (*process)(BackendDriver_t *driver);
+	int (*get_status)(BackendDriver_t *driver, BackendStatus_t *out);
 	void (*cycle_begin)(BackendDriver_t *driver);
 	void (*cycle_end)(BackendDriver_t *driver);
 	/* Input data is a stable snapshot for the current cycle. */
@@ -52,7 +53,5 @@ struct BackendDriver
 	char system_name[16];
 	void *impl;
 };
-
-int backend_get_status(const BackendDriver_t *drv, BackendStatus_t *out);
 
 #endif /* BACKEND_IFACE_H */

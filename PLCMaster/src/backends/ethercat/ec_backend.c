@@ -14,6 +14,7 @@
 #define EC_MAX_IFNAME_LEN 63
 #define EC_DEFAULT_PERIOD_NS 1000000ULL
 #define EC_DEFAULT_SPIN_THRESHOLD_NS 50000U
+#define EC_DEFAULT_WKC_WARN_THRESHOLD 2U
 #define EC_DEFAULT_WKC_FAIL_THRESHOLD 10U
 #define EC_DEFAULT_WARMUP_CYCLES 20U
 #define EC_DEFAULT_STATE_CHECK_PERIOD_MS 200U
@@ -127,10 +128,10 @@ BackendDriver_t *ethercat_backend_create(const BackendConfig_t *cfg, size_t ioma
 			rt_affinity = -1;
 		}
 
-		impl->period_ns = period_ns;
-		impl->cycle_time_us = cfg->cycle_time_us != 0U ? cfg->cycle_time_us : (uint32_t)(period_ns / 1000ULL);
-		impl->rt_cycle_us = (uint32_t)(period_ns / 1000ULL);
-		impl->spin_threshold_ns = spin_threshold_ns;
+	impl->period_ns = period_ns;
+	impl->cycle_time_us = cfg->cycle_time_us != 0U ? cfg->cycle_time_us : (uint32_t)(period_ns / 1000ULL);
+	impl->rt_cycle_us = (uint32_t)(period_ns / 1000ULL);
+	impl->spin_threshold_ns = spin_threshold_ns;
 		impl->rt_params.cls = PLAT_THREAD_RT;
 		impl->rt_params.priority = rt_priority;
 		impl->rt_params.affinity_cpu = rt_affinity;
@@ -140,6 +141,7 @@ BackendDriver_t *ethercat_backend_create(const BackendConfig_t *cfg, size_t ioma
 	impl->dc_clock = cfg->dc_clock;
 	impl->iomap_size = iomap_size;
 	impl->perf_freq = 0U;
+	impl->wkc_warn_threshold = cfg->wkc_warn_threshold != 0U ? cfg->wkc_warn_threshold : EC_DEFAULT_WKC_WARN_THRESHOLD;
 	impl->wkc_fail_threshold = cfg->wkc_fail_threshold != 0U ? cfg->wkc_fail_threshold : EC_DEFAULT_WKC_FAIL_THRESHOLD;
 	impl->warmup_cycles = cfg->warmup_cycles != 0U ? cfg->warmup_cycles : EC_DEFAULT_WARMUP_CYCLES;
 	impl->state_check_period_ms = cfg->state_check_period_ms != 0U ? cfg->state_check_period_ms : EC_DEFAULT_STATE_CHECK_PERIOD_MS;
@@ -433,7 +435,8 @@ static void *ethercat_rt_thread(void *arg)
 {
 	EthercatDriver_t *impl = (EthercatDriver_t *)arg;
 	int expected_wkc = (int)impl->expected_wkc;
-	uint32_t wkc_fail_threshold = impl->wkc_fail_threshold != 0U ? impl->wkc_fail_threshold : 1U;
+	uint32_t wkc_warn_threshold = impl->wkc_warn_threshold != 0U ? impl->wkc_warn_threshold : EC_DEFAULT_WKC_WARN_THRESHOLD;
+	uint32_t wkc_fail_threshold = impl->wkc_fail_threshold != 0U ? impl->wkc_fail_threshold : EC_DEFAULT_WKC_FAIL_THRESHOLD;
 	uint64_t cycle_count = 0U;
 	uint64_t deadline = plat_time_monotonic_ns() + impl->period_ns;
 
@@ -512,7 +515,7 @@ static void *ethercat_rt_thread(void *arg)
 			}
 			zero_outputs = true;
 		}
-		in_op = (impl->dowkccheck == 0U) && (ec_state == EC_STATE_OPERATIONAL);
+		in_op = (ec_state == EC_STATE_OPERATIONAL) && (impl->dowkccheck < wkc_warn_threshold);
 		plat_atomic_store_bool(&impl->in_op, in_op);
 
 		plat_time_sleep_until_ns(deadline, impl->spin_threshold_ns);
@@ -753,6 +756,21 @@ static uint8_t *ethercat_get_output_data(BackendDriver_t *driver, uint16_t devic
 	return dev->out_buffers[idx];
 }
 
+static int ethercat_get_status(BackendDriver_t *driver, BackendStatus_t *out)
+{
+	EthercatDriver_t *impl = get_impl(driver);
+
+	if (impl == NULL || out == NULL)
+	{
+		return -1;
+	}
+
+	out->in_op = plat_atomic_load_bool(&impl->in_op);
+	out->fault_latched = (plat_atomic_load_i32(&impl->fault_latched) != 0);
+	out->last_error = plat_atomic_load_i32(&impl->ec_state);
+	return 0;
+}
+
 static BackendDriverOps_t g_ec_ops = {
 	.init = ethercat_init,
 	.bind = ethercat_bind_device,
@@ -760,6 +778,7 @@ static BackendDriverOps_t g_ec_ops = {
     .start = ethercat_start,
     .stop = ethercat_stop,
     .process = ethercat_process,
+	.get_status = ethercat_get_status,
     .cycle_begin = ethercat_cycle_begin,
     .cycle_end = ethercat_cycle_end,
     .get_input_data = ethercat_get_input_data,

@@ -84,9 +84,6 @@
     <ClCompile Include="src\app\plc\plc_runtime.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="src\backends\backend_iface.c">
-      <Filter>Fichiers sources</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\backends\backend_iface.h">

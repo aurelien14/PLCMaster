@@ -93,7 +93,12 @@ PlcHealthLevel_t runtime_get_health_level(const Runtime_t* rt)
 	size_t i;
 	PlcHealthLevel_t level = PLC_HEALTH_OK;
 
-	if (rt == NULL || rt->backends == NULL)
+	if (rt == NULL)
+	{
+		return PLC_HEALTH_FAULT;
+	}
+
+	if (rt->backends == NULL)
 	{
 		return PLC_HEALTH_OK;
 	}
@@ -101,11 +106,20 @@ PlcHealthLevel_t runtime_get_health_level(const Runtime_t* rt)
 	for (i = 0; i < rt->backend_count; ++i)
 	{
 		const BackendDriver_t *drv = &rt->backends[i];
-		BackendStatus_t status;
+		BackendStatus_t status = {
+			.in_op = true,
+			.fault_latched = false,
+			.last_error = 0,
+		};
 
-		if (backend_get_status(drv, &status) != 0)
+		if (drv == NULL)
 		{
 			continue;
+		}
+
+		if (drv->ops != NULL && drv->ops->get_status != NULL)
+		{
+			(void)drv->ops->get_status((BackendDriver_t *)drv, &status);
 		}
 
 		if (status.fault_latched)
