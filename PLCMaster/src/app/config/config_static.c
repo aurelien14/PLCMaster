@@ -15,6 +15,7 @@ static const BackendConfig_t kBackendConfigs[] = {
 		.rt_affinity_cpu = 1,
 		.rt_reserved_cpu = 1,
 		.rt_timer_resolution_ms = 1,
+		.wkc_warn_threshold = 2,
 		.wkc_fail_threshold = 10,
 		.warmup_cycles = 20,
 		.state_check_period_ms = 200,

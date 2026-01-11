@@ -51,6 +51,7 @@ typedef struct EthercatDriver
 	plat_atomic_i32_t fault_latched;
 	plat_atomic_i32_t ec_state;
 	uint32_t dowkccheck;
+	uint32_t wkc_warn_threshold;
 	uint32_t wkc_fail_threshold;
 	uint32_t warmup_cycles;
 	uint32_t state_check_period_cycles;
