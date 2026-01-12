@@ -137,11 +137,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\core\ipc\spsc_ring.c" />
+    <ClCompile Include="src\core\ipc\tag_rpc.c" />
+    <ClCompile Include="src\core\ipc\tag_rpc_plc.c" />
+    <ClCompile Include="src\core\platform\platform_socket.c" />
     <ClCompile Include="src\main.c" />
     <ClCompile Include="src\backends\ethercat\ec_backend.c" />
     <ClCompile Include="src\backends\ethercat\ec_soem_lifecycle.c" />
     <ClCompile Include="src\backends\modbus\mb_backend.c" />
     <ClCompile Include="src\core\backend\backend_registry.c" />
+    <ClCompile Include="src\services\tcp\tag_tcp_server.c" />
     <ClCompile Include="src\system\builder\backend_factories.c" />
     <ClCompile Include="src\core\platform\platform_thread.c" />
     <ClCompile Include="src\core\platform\platform_mem.c" />
@@ -171,9 +176,13 @@
     <ClInclude Include="src\backends\ethercat\ec_soem_lifecycle.h" />
     <ClInclude Include="src\backends\modbus\mb_backend.h" />
     <ClInclude Include="src\core\backend\backend_registry.h" />
+    <ClInclude Include="src\core\ipc\spsc_ring.h" />
+    <ClInclude Include="src\core\ipc\tag_rpc.h" />
+    <ClInclude Include="src\core\ipc\tag_rpc_plc.h" />
     <ClInclude Include="src\core\platform\platform_atomic.h" />
     <ClInclude Include="src\core\platform\platform_detect.h" />
     <ClInclude Include="src\core\platform\platform_mem.h" />
+    <ClInclude Include="src\core\platform\platform_socket.h" />
     <ClInclude Include="src\core\platform\platform_thread.h" />
     <ClInclude Include="src\core\platform\platform_time.h" />
     <ClInclude Include="src\core\runtime\runtime_health.h" />
@@ -194,6 +203,7 @@
     <ClInclude Include="src\app\diag\ethercat_diag.h" />
     <ClInclude Include="src\core\plc\plc_scheduler.h" />
     <ClInclude Include="src\core\plc\plc_task.h" />
+    <ClInclude Include="src\services\tcp\tag_tcp_server.h" />
     <ClInclude Include="src\system\builder\system_builder.h" />
     <ClInclude Include="src\app\config\config_static.h" />
   </ItemGroup>

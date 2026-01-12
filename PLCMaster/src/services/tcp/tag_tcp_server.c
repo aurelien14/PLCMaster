@@ -10,16 +10,16 @@ static void *tag_tcp_server_thread(void *arg);
 
 static void socket_invalidate(PlatSocket_t *s)
 {
-\tif (s == NULL)
-\t{
-\t\treturn;
-\t}
+	if (s == NULL)
+	{
+		return;
+	}
 #if PLAT_WINDOWS
-\ts->sock = INVALID_SOCKET;
+	s->sock = INVALID_SOCKET;
 #else
-\ts->fd = -1;
+	s->fd = -1;
 #endif
-\ts->valid = false;
+	s->valid = false;
 }
 
 static const char *skip_ws(const char *s)

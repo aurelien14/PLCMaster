@@ -56,6 +56,11 @@ static const ProcessVarDesc_t kProcessVarDescs[] = {
 		.type = TAG_T_U16,
 		.initial = {.u16 = 0},
 	},
+	{
+		.name = "counter_test",
+		.type = TAG_T_U32,
+		.initial = {.u32 = 0},
+	},
 };
 
 static const HmiTagDesc_t kHmiTagDescs[] = {
@@ -72,6 +77,11 @@ static const HmiTagDesc_t kHmiTagDescs[] = {
 	{
 		.name = "alarm_code",
 		.alias_of = "proc.alarm_code",
+		.access = HMI_RO,
+	},
+	{
+		.name = "counter_test",
+		.alias_of = "proc.counter_test",
 		.access = HMI_RO,
 	},
 };
