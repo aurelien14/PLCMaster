@@ -45,6 +45,8 @@ typedef struct Runtime
 
 int runtime_init(Runtime_t* rt);
 void runtime_deinit(Runtime_t* rt);
+int runtime_backends_start(Runtime_t* rt);
+int runtime_backends_stop(Runtime_t* rt);
 void runtime_backends_cycle_begin(Runtime_t* rt);
 void runtime_backends_sync_outputs(Runtime_t* rt);
 void runtime_backends_process_nonrt(Runtime_t* rt);
