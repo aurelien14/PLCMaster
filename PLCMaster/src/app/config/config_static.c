@@ -25,7 +25,7 @@ static const BackendConfig_t kBackendConfigs[] = {
 static const DeviceConfig_t kDeviceConfigs[] = {
 	{
 		.name = "CPU_IO",
-		.model = "L230",
+		.model = "L230 DAIO Micro",
 		.backend = "ec0",
 		.ethercat =
 			{
