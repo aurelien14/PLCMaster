@@ -31,6 +31,5 @@ BackendDriver_t *backend_create(
 	size_t max_devices,
 	size_t iomap_size_hint);
 void backend_destroy(BackendDriver_t *drv);
-int backend_registry_register_dynamic(const BackendFactoryEntry_t *e);
 
 #endif /* BACKEND_REGISTRY_H */
