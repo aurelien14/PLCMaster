@@ -7,15 +7,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "core/backend/backend_config.h"
+
 struct DeviceConfig;
 struct DeviceDesc;
-
-typedef enum BackendType
-{
-	BACKEND_TYPE_NONE = 0,
-	BACKEND_TYPE_ETHERCAT = 1,
-	BACKEND_TYPE_MODBUS = 2,
-} BackendType_t;
 
 #define MAX_BACKENDS 4
 
