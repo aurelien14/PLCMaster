@@ -81,6 +81,18 @@
     <ClCompile Include="src\core\platform\platform_time.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\ipc\spsc_ring.c">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\ipc\tag_rpc.c">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\ipc\tag_rpc_plc.c">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\backend\backend_registry.c">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
     <ClCompile Include="src\system\builder\backend_factories.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
@@ -102,9 +114,7 @@
     <ClCompile Include="src\core\platform\platform_socket.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\backend\backend_registry.c">
-      <Filter>Fichiers sources</Filter>
-    </ClCompile>
+>>>>>>>>> Temporary merge branch 2
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\core\backend\backend_iface.h">
