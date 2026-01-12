@@ -317,7 +317,7 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 		rt->backend_count++;
 		backends_initialized = 1;
 
-		if (drv->ops == NULL || drv->ops->init == NULL || drv->ops->bind == NULL || drv->ops->finalize == NULL || drv->ops->start == NULL) {
+		if (drv->ops == NULL || drv->ops->init == NULL || drv->ops->bind == NULL || drv->ops->finalize == NULL) {
 			goto cleanup;
 		}
 
@@ -342,9 +342,6 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 			goto cleanup;
 		}
 
-		if (drv->ops->start(drv) != 0) {
-			goto cleanup;
-		}
 	}
 
 	if (config->process_var_count > 0 && config->process_vars == NULL) {

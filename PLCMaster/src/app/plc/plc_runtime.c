@@ -11,8 +11,15 @@
 int plc_runtime_run(Runtime_t *rt, PlcScheduler_t *sched)
 {
 	int rc = -1;
+	int stop_rc = 0;
 
 	if (rt == NULL || sched == NULL)
+	{
+		return -1;
+	}
+
+	rc = runtime_backends_start(rt);
+	if (rc != 0)
 	{
 		return -1;
 	}
@@ -43,6 +50,12 @@ int plc_runtime_run(Runtime_t *rt, PlcScheduler_t *sched)
 	else
 	{
 		printf("FAIL rc=%d\n", rc);
+	}
+
+	stop_rc = runtime_backends_stop(rt);
+	if (rc == 0 && stop_rc != 0)
+	{
+		rc = -1;
 	}
 
 	return rc;
