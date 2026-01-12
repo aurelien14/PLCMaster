@@ -81,9 +81,6 @@
     <ClCompile Include="src\core\platform\platform_time.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\backend\backend_registry.c">
-      <Filter>Fichiers sources</Filter>
-    </ClCompile>
     <ClCompile Include="src\system\builder\backend_factories.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
@@ -103,6 +100,9 @@
       <Filter>Fichiers sources</Filter>
     </ClCompile>
     <ClCompile Include="src\core\platform\platform_socket.c">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\backend\backend_registry.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
   </ItemGroup>
