@@ -2,9 +2,29 @@
 
 #include "backends/registry/backend_registry.h"
 
-#include <string.h>
+#define BACKEND_REGISTRY_DYNAMIC_CAPACITY 16
 
-#include "backends/ethercat/ec_backend.h"
+static BackendFactoryEntry_t g_backend_factories_dyn[BACKEND_REGISTRY_DYNAMIC_CAPACITY];
+static size_t g_backend_factories_dyn_count = 0U;
+
+static const BackendFactoryEntry_t *backend_registry_find_factory(BackendType_t type)
+{
+	size_t i;
+
+	for (i = 0U; i < g_backend_factories_count; ++i) {
+		if (g_backend_factories[i].type == type) {
+			return &g_backend_factories[i];
+		}
+	}
+
+	for (i = 0U; i < g_backend_factories_dyn_count; ++i) {
+		if (g_backend_factories_dyn[i].type == type) {
+			return &g_backend_factories_dyn[i];
+		}
+	}
+
+	return NULL;
+}
 
 BackendDriver_t *backend_create(
 	const BackendConfig_t *cfg,
@@ -12,29 +32,25 @@ BackendDriver_t *backend_create(
 	size_t max_devices,
 	size_t iomap_size_hint)
 {
+	const BackendFactoryEntry_t *factory;
 	BackendType_t backend_type;
 
-	if (cfg == NULL) {
+	if (cfg == NULL || cfg->type == BACKEND_TYPE_NONE) {
 		return NULL;
 	}
 
 	backend_type = cfg->type;
-	if (backend_type == BACKEND_TYPE_NONE && cfg->name != NULL) {
-		if (strncmp(cfg->name, "ec", 2) == 0) {
-			backend_type = BACKEND_TYPE_ETHERCAT;
-		}
-	}
-
-	switch (backend_type) {
-	case BACKEND_TYPE_ETHERCAT:
-		return ethercat_backend_create(cfg, iomap_size_hint, max_devices, backend_index);
-	default:
+	factory = backend_registry_find_factory(backend_type);
+	if (factory == NULL || factory->create == NULL) {
 		return NULL;
 	}
+
+	return factory->create(cfg, iomap_size_hint, max_devices, backend_index);
 }
 
 void backend_destroy(BackendDriver_t *drv)
 {
+	const BackendFactoryEntry_t *factory;
 	BackendType_t backend_type;
 
 	if (drv == NULL) {
@@ -46,11 +62,26 @@ void backend_destroy(BackendDriver_t *drv)
 	}
 
 	backend_type = drv->type;
-	switch (backend_type) {
-	case BACKEND_TYPE_ETHERCAT:
-		ethercat_backend_destroy(drv);
-		break;
-	default:
-		break;
+	factory = backend_registry_find_factory(backend_type);
+	if (factory != NULL && factory->destroy != NULL) {
+		factory->destroy(drv);
 	}
+}
+
+int backend_registry_register_dynamic(const BackendFactoryEntry_t *e)
+{
+	if (e == NULL || e->type == BACKEND_TYPE_NONE || e->create == NULL) {
+		return -1;
+	}
+
+	if (backend_registry_find_factory(e->type) != NULL) {
+		return 0;
+	}
+
+	if (g_backend_factories_dyn_count >= BACKEND_REGISTRY_DYNAMIC_CAPACITY) {
+		return -1;
+	}
+
+	g_backend_factories_dyn[g_backend_factories_dyn_count++] = *e;
+	return 0;
 }

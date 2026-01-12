@@ -1,66 +1,70 @@
 /* Device registry implementation. */
 
 #include "device_registry.h"
-#include "devices/l230/l230_desc.h"
 
 #include <stddef.h>
 #include <string.h>
 
-#define DEVICE_REGISTRY_CAPACITY 16
+#define DEVICE_REGISTRY_DYNAMIC_CAPACITY 64
 
-static const DeviceDesc_t *registered_devices[DEVICE_REGISTRY_CAPACITY];
-static size_t registered_device_count = 0U;
+extern const DeviceDesc_t * const g_device_descs[];
+extern const size_t g_device_descs_count;
 
-static void device_registry_init(void)
+static const DeviceDesc_t *g_device_descs_dyn[DEVICE_REGISTRY_DYNAMIC_CAPACITY];
+static size_t g_device_descs_dyn_count = 0U;
+
+const DeviceDesc_t *device_registry_find(const char *model)
 {
-    static int initialized = 0;
-    if (initialized) {
-        return;
-    }
+	size_t i;
 
-    initialized = 1;
-    (void)device_registry_register(&DEVICE_DESC_L230);
+	if (model == NULL) {
+		return NULL;
+	}
+
+	for (i = 0U; i < g_device_descs_count; ++i) {
+		if (strcmp(g_device_descs[i]->model, model) == 0) {
+			return g_device_descs[i];
+		}
+	}
+
+	for (i = 0U; i < g_device_descs_dyn_count; ++i) {
+		if (strcmp(g_device_descs_dyn[i]->model, model) == 0) {
+			return g_device_descs_dyn[i];
+		}
+	}
+
+	return NULL;
+}
+
+int device_registry_register_dynamic(const DeviceDesc_t *descriptor)
+{
+	size_t i;
+
+	if (descriptor == NULL || descriptor->model == NULL) {
+		return -1;
+	}
+
+	for (i = 0U; i < g_device_descs_count; ++i) {
+		if (strcmp(g_device_descs[i]->model, descriptor->model) == 0) {
+			return 0;
+		}
+	}
+
+	for (i = 0U; i < g_device_descs_dyn_count; ++i) {
+		if (strcmp(g_device_descs_dyn[i]->model, descriptor->model) == 0) {
+			return 0;
+		}
+	}
+
+	if (g_device_descs_dyn_count >= DEVICE_REGISTRY_DYNAMIC_CAPACITY) {
+		return -1;
+	}
+
+	g_device_descs_dyn[g_device_descs_dyn_count++] = descriptor;
+	return 0;
 }
 
 int device_registry_register(const DeviceDesc_t *descriptor)
 {
-    size_t i;
-
-    if (descriptor == NULL || descriptor->model == NULL) {
-        return -1;
-    }
-
-    device_registry_init();
-
-    for (i = 0; i < registered_device_count; ++i) {
-        if (strcmp(registered_devices[i]->model, descriptor->model) == 0) {
-            return 0;
-        }
-    }
-
-    if (registered_device_count >= DEVICE_REGISTRY_CAPACITY) {
-        return -1;
-    }
-
-    registered_devices[registered_device_count++] = descriptor;
-    return 0;
-}
-
-const DeviceDesc_t *device_registry_find(const char *model)
-{
-    size_t i;
-
-    if (model == NULL) {
-        return NULL;
-    }
-
-    device_registry_init();
-
-    for (i = 0; i < registered_device_count; ++i) {
-        if (strcmp(registered_devices[i]->model, model) == 0) {
-            return registered_devices[i];
-        }
-    }
-
-    return NULL;
+	return device_registry_register_dynamic(descriptor);
 }
