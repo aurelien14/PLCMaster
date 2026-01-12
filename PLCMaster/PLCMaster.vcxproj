@@ -149,8 +149,12 @@
     <ClCompile Include="src\services\tcp\tag_tcp_server.c" />
     <ClCompile Include="src\system\builder\backend_factories.c" />
     <ClCompile Include="src\core\platform\platform_thread.c" />
+    <ClCompile Include="src\core\platform\platform_socket.c" />
     <ClCompile Include="src\core\platform\platform_mem.c" />
     <ClCompile Include="src\core\platform\platform_time.c" />
+    <ClCompile Include="src\core\ipc\spsc_ring.c" />
+    <ClCompile Include="src\core\ipc\tag_rpc.c" />
+    <ClCompile Include="src\core\ipc\tag_rpc_plc.c" />
     <ClCompile Include="src\core\runtime\runtime.c" />
     <ClCompile Include="src\core\rt\rt_time.c" />
     <ClCompile Include="src\core\status\status_tags.c" />
@@ -165,6 +169,7 @@
     <ClCompile Include="src\app\plc\plc_tasks.c" />
     <ClCompile Include="src\app\plc\plc_runtime.c" />
     <ClCompile Include="src\core\plc\plc_scheduler.c" />
+    <ClCompile Include="src\services\tcp\tag_tcp_server.c" />
     <ClCompile Include="src\system\builder\system_builder.c" />
     <ClCompile Include="src\app\config\config_static.c" />
   </ItemGroup>
@@ -185,6 +190,9 @@
     <ClInclude Include="src\core\platform\platform_socket.h" />
     <ClInclude Include="src\core\platform\platform_thread.h" />
     <ClInclude Include="src\core\platform\platform_time.h" />
+    <ClInclude Include="src\core\ipc\spsc_ring.h" />
+    <ClInclude Include="src\core\ipc\tag_rpc.h" />
+    <ClInclude Include="src\core\ipc\tag_rpc_plc.h" />
     <ClInclude Include="src\core\runtime\runtime_health.h" />
     <ClInclude Include="src\core\runtime\runtime.h" />
     <ClInclude Include="src\core\rt\rt_time.h" />
