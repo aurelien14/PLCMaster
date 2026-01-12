@@ -3,6 +3,7 @@
 #include "core/device/device_registry.h"
 
 #include "devices/l230/l230_desc.h"
+#include "devices/l400/l400_desc.h"
 
 #define DEVICE_ENTRY(desc) &(desc),
 

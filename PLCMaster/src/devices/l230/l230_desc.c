@@ -60,7 +60,7 @@ static void config_hook_EL230(ecx_contextt* ctx, uint16_t slave)
 }
 
 const DeviceDesc_t DEVICE_DESC_L230 = {
-    .model = "L230",
+    .model = "L230 DAIO Micro",
     .vendor_id = 0x47535953,
     .product_code = 0x3213335,
     .rx_bytes = sizeof(L230_RX_PDO_t),
