@@ -3,7 +3,12 @@
 #ifndef DEVICE_REGISTRY_H
 #define DEVICE_REGISTRY_H
 
-#include "devices/device_desc.h"
+#include <stddef.h>
+
+#include "core/device/device_desc.h"
+
+extern const DeviceDesc_t *const g_device_descs[];
+extern const size_t g_device_descs_count;
 
 int device_registry_register_dynamic(const DeviceDesc_t *descriptor);
 int device_registry_register(const DeviceDesc_t *descriptor);

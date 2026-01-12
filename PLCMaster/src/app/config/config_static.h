@@ -7,11 +7,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "backends/backend_iface.h"
+#include "core/backend/backend_iface.h"
 #include "app/plc/plc_app.h"
 #include "core/runtime/runtime.h"
 #include "core/platform/platform_thread.h"
-#include "devices/device_desc.h"
+#include "core/device/device_desc.h"
 
 typedef struct BackendConfig
 {

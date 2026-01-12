@@ -9,7 +9,7 @@
 
 #include "core/runtime/runtime_health.h"
 #include "core/tag/tag_table.h"
-#include "backends/backend_iface.h"
+#include "core/backend/backend_iface.h"
 
 typedef union
 {

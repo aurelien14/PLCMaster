@@ -1,6 +1,6 @@
 /* Backend registry static factory list. */
 
-#include "backends/registry/backend_registry.h"
+#include "core/backend/backend_registry.h"
 
 #include "backends/ethercat/ec_backend.h"
 
@@ -13,7 +13,7 @@
 	},
 
 const BackendFactoryEntry_t g_backend_factories[] = {
-#include "backends/registry/backend_list.def"
+#include "system/builder/backend_list.def"
 };
 
 const size_t g_backend_factories_count =

@@ -3,7 +3,7 @@
 #ifndef L230_DESC_H
 #define L230_DESC_H
 
-#include "devices/device_desc.h"
+#include "core/device/device_desc.h"
 
 #include <stdint.h>
 

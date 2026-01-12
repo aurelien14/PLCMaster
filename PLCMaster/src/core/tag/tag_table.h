@@ -4,7 +4,7 @@
 #define TAG_TABLE_H
 
 #include <stdint.h>
-#include "devices/device_desc.h"
+#include "core/device/device_desc.h"
 
 #define MAX_TAGS 256U
 

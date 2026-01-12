@@ -1,6 +1,6 @@
 /* Backend registry/factory implementation. */
 
-#include "backends/registry/backend_registry.h"
+#include "core/backend/backend_registry.h"
 
 #define BACKEND_REGISTRY_DYNAMIC_CAPACITY 16
 

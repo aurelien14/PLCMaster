@@ -42,10 +42,10 @@
     <ClCompile Include="src\devices\l230\l230_desc.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="src\devices\registry\device_registry.c">
+    <ClCompile Include="src\core\device\device_registry.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="src\devices\registry\device_registry_static.c">
+    <ClCompile Include="src\system\builder\device_registry_static.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
     <ClCompile Include="src\app\user_entry.c">
@@ -81,10 +81,10 @@
     <ClCompile Include="src\core\platform\platform_time.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="src\backends\registry\backend_registry.c">
+    <ClCompile Include="src\core\backend\backend_registry.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="src\backends\registry\backend_factories.c">
+    <ClCompile Include="src\system\builder\backend_factories.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
     <ClCompile Include="src\app\plc\plc_runtime.c">
@@ -92,7 +92,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\backends\backend_iface.h">
+    <ClInclude Include="src\core\backend\backend_iface.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
     <ClInclude Include="src\core\runtime\runtime.h">
@@ -113,13 +113,13 @@
     <ClInclude Include="src\devices\l230\l230_desc.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="src\devices\registry\device_registry.h">
+    <ClInclude Include="src\core\device\device_registry.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
     <ClInclude Include="src\app\user_entry.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="src\devices\device_desc.h">
+    <ClInclude Include="src\core\device\device_desc.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
     <ClInclude Include="src\app\io\io_view.h">
@@ -179,7 +179,7 @@
     <ClInclude Include="src\core\runtime\runtime_health.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="src\backends\registry\backend_registry.h">
+    <ClInclude Include="src\core\backend\backend_registry.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
     <ClInclude Include="src\app\plc\plc_task_ctx.h">
@@ -188,10 +188,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="tests\README.md" />
-    <None Include="src\backends\registry\backend_list.def">
+    <None Include="src\system\builder\backend_list.def">
       <Filter>Fichiers sources</Filter>
     </None>
-    <None Include="src\devices\registry\device_list.def">
+    <None Include="src\system\builder\device_list.def">
       <Filter>Fichiers sources</Filter>
     </None>
   </ItemGroup>
