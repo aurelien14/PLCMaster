@@ -45,6 +45,9 @@
     <ClCompile Include="src\devices\registry\device_registry.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
+    <ClCompile Include="src\devices\registry\device_registry_static.c">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
     <ClCompile Include="src\app\user_entry.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
@@ -79,6 +82,9 @@
       <Filter>Fichiers sources</Filter>
     </ClCompile>
     <ClCompile Include="src\backends\registry\backend_registry.c">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="src\backends\registry\backend_factories.c">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
     <ClCompile Include="src\app\plc\plc_runtime.c">
@@ -182,5 +188,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="tests\README.md" />
+    <None Include="src\backends\registry\backend_list.def">
+      <Filter>Fichiers sources</Filter>
+    </None>
+    <None Include="src\devices\registry\device_list.def">
+      <Filter>Fichiers sources</Filter>
+    </None>
   </ItemGroup>
 </Project>

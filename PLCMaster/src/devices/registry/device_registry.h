@@ -5,6 +5,7 @@
 
 #include "devices/device_desc.h"
 
+int device_registry_register_dynamic(const DeviceDesc_t *descriptor);
 int device_registry_register(const DeviceDesc_t *descriptor);
 const DeviceDesc_t *device_registry_find(const char *model);
 
