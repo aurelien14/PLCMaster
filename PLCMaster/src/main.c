@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "core/ipc/tag_rpc.h"
+#include "core/ipc/tag_rpc_plc.h"
 #include "core/runtime/runtime.h"
 #include "app/user_entry.h"
 #include "core/plc/plc_scheduler.h"
@@ -13,6 +15,7 @@ typedef struct
 {
 	Runtime_t *rt;
 	PlcScheduler_t *sched;
+	TagRpcChannel_t *rpc;
 } PlcCycleCtx_t;
 
 static void plc_cycle_end(void *user)
@@ -50,6 +53,11 @@ static void plc_cycle_begin(void *user)
 		return;
 	}
 
+	if (ctx != NULL && ctx->rpc != NULL)
+	{
+		tag_rpc_plc_poll(ctx->rpc, rt, 16);
+	}
+
 	runtime_backends_cycle_begin(rt);
 	PlcHealthLevel_t level = runtime_get_health_level(rt);
 	plc_scheduler_set_health(sched, level);
@@ -79,10 +87,12 @@ int main(void)
 	PlcApp_t app;
 	PlcScheduler_t sched;
 	PlcCycleCtx_t cycle_ctx;
+	TagRpcChannel_t rpc;
 	memset(&sched, 0, sizeof(sched));
 	runtime_init(&rt);
 	memset(&app, 0, sizeof(app));
 	memset(&cycle_ctx, 0, sizeof(cycle_ctx));
+	memset(&rpc, 0, sizeof(rpc));
 
 	const SystemConfig_t *cfg = user_get_config();
 	int rc = system_build(&rt, cfg);
@@ -106,6 +116,7 @@ int main(void)
 	{
 		cycle_ctx.rt = &rt;
 		cycle_ctx.sched = &sched;
+		cycle_ctx.rpc = &rpc;
 		rc = plc_scheduler_set_callbacks(&sched, plc_cycle_begin, plc_cycle_end, &cycle_ctx);
 	}
 
@@ -116,7 +127,12 @@ int main(void)
 
 	if (rc == 0)
 	{
-		rc = plc_runtime_run(&rt, &sched);
+		rc = tag_rpc_init(&rpc);
+	}
+
+	if (rc == 0)
+	{
+		rc = plc_runtime_run(&rt, &sched, &rpc);
 	}
 
 	runtime_deinit(&rt);

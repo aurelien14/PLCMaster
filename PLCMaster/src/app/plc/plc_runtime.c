@@ -3,17 +3,26 @@
 #include <stdio.h>
 
 #include "core/platform/platform_thread.h"
+#include "services/tcp/tag_tcp_server.h"
 #include "core/plc/plc_scheduler.h"
 #include "core/runtime/runtime.h"
 #include "app/diag/ethercat_diag.h"
 #include "app/plc/plc_runtime.h"
 
-int plc_runtime_run(Runtime_t *rt, PlcScheduler_t *sched)
+int plc_runtime_run(Runtime_t *rt, PlcScheduler_t *sched, TagRpcChannel_t *rpc)
 {
 	int rc = -1;
 	int stop_rc = 0;
+	TagTcpServer_t server;
 
-	if (rt == NULL || sched == NULL)
+	if (rt == NULL || sched == NULL || rpc == NULL)
+	{
+		return -1;
+	}
+
+	/* TCP 2049 (often used by NFS). */
+	rc = tag_tcp_server_start(&server, rpc, 2049);
+	if (rc != 0)
 	{
 		return -1;
 	}
@@ -21,6 +30,7 @@ int plc_runtime_run(Runtime_t *rt, PlcScheduler_t *sched)
 	rc = runtime_backends_start(rt);
 	if (rc != 0)
 	{
+		tag_tcp_server_stop(&server);
 		return -1;
 	}
 
@@ -41,6 +51,8 @@ int plc_runtime_run(Runtime_t *rt, PlcScheduler_t *sched)
 			rc = -1;
 		}
 	}
+
+	tag_tcp_server_stop(&server);
 
 	if (rc == 0)
 	{
