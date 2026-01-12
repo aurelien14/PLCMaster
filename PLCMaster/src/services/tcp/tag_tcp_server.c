@@ -15,6 +15,17 @@ static void socket_invalidate(PlatSocket_t *s)
 #endif
 }
 
+static void close_client(TagTcpServer_t *s)
+{
+	if (s == NULL || !s->client_sock.valid)
+	{
+		return;
+	}
+
+	plat_socket_close(&s->client_sock);
+	printf("[TCP] Client disconnected\n");
+}
+
 static const char *skip_ws(const char *s)
 {
 	while (s != NULL && *s != '\0' && isspace((unsigned char)*s))
@@ -190,6 +201,8 @@ static void *tag_tcp_server_thread(void *arg)
 		return NULL;
 	}
 
+	printf("[TCP] Tag server listening on port %u\n", s->port);
+
 	for (;;)
 	{
 		size_t rx = 0U;
@@ -207,19 +220,27 @@ static void *tag_tcp_server_thread(void *arg)
 				plat_thread_sleep_ms(10);
 				continue;
 			}
+			printf("[TCP] Client connected\n");
+			if (plat_socket_send_all(&s->client_sock, "OK PLCMASTER TAGRPC/1.0\n",
+				strlen("OK PLCMASTER TAGRPC/1.0\n")) != 0)
+			{
+				close_client(s);
+				line_len = 0U;
+				continue;
+			}
 			line_len = 0U;
 		}
 
 		rc = plat_socket_recv(&s->client_sock, recv_buf, sizeof(recv_buf), &rx);
 		if (rc == 0)
 		{
-			plat_socket_close(&s->client_sock);
+			close_client(s);
 			line_len = 0U;
 			continue;
 		}
 		if (rc < 0)
 		{
-			plat_socket_close(&s->client_sock);
+			close_client(s);
 			line_len = 0U;
 			continue;
 		}
@@ -234,7 +255,7 @@ static void *tag_tcp_server_thread(void *arg)
 				handle_request(s, line_buf, response, sizeof(response));
 				if (plat_socket_send_all(&s->client_sock, response, strlen(response)) != 0)
 				{
-					plat_socket_close(&s->client_sock);
+					close_client(s);
 					line_len = 0U;
 					break;
 				}
@@ -252,7 +273,7 @@ static void *tag_tcp_server_thread(void *arg)
 		}
 	}
 
-	plat_socket_close(&s->client_sock);
+	close_client(s);
 	plat_socket_close(&s->server_sock);
 	plat_socket_shutdown();
 	return NULL;
@@ -288,6 +309,10 @@ void tag_tcp_server_stop(TagTcpServer_t* s)
 	}
 
 	plat_atomic_store_bool(&s->stop_flag, true);
+	if (s->client_sock.valid)
+	{
+		printf("[TCP] Client disconnected\n");
+	}
 	plat_socket_close(&s->client_sock);
 	plat_socket_close(&s->server_sock);
 	plat_thread_join(&s->thread);
