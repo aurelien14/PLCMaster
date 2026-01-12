@@ -1,13 +1,13 @@
 /* Device registry static descriptor list. */
 
-#include "devices/registry/device_registry.h"
+#include "core/device/device_registry.h"
 
 #include "devices/l230/l230_desc.h"
 
 #define DEVICE_ENTRY(desc) &(desc),
 
 const DeviceDesc_t * const g_device_descs[] = {
-#include "devices/registry/device_list.def"
+#include "system/builder/device_list.def"
 };
 
 const size_t g_device_descs_count =

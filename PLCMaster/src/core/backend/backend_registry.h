@@ -5,18 +5,21 @@
 
 #include <stddef.h>
 
-#include "backends/backend_iface.h"
+#include "core/backend/backend_iface.h"
 #include "app/config/config_static.h"
+
+typedef BackendDriver_t *(*BackendCreateFn)(const BackendConfig_t *cfg,
+	size_t iomap_hint,
+	size_t max_devices,
+	size_t backend_index);
+typedef void (*BackendDestroyFn)(BackendDriver_t *drv);
 
 typedef struct BackendFactoryEntry
 {
 	BackendType_t type;
 	const char *type_name;
-	BackendDriver_t *(*create)(const BackendConfig_t *cfg,
-		size_t iomap_hint,
-		size_t max_devices,
-		size_t backend_index);
-	void (*destroy)(BackendDriver_t *drv);
+	BackendCreateFn create;
+	BackendDestroyFn destroy;
 } BackendFactoryEntry_t;
 
 extern const BackendFactoryEntry_t g_backend_factories[];

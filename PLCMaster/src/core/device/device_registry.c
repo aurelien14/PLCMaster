@@ -1,14 +1,11 @@
 /* Device registry implementation. */
 
-#include "device_registry.h"
+#include "core/device/device_registry.h"
 
 #include <stddef.h>
 #include <string.h>
 
 #define DEVICE_REGISTRY_DYNAMIC_CAPACITY 64
-
-extern const DeviceDesc_t * const g_device_descs[];
-extern const size_t g_device_descs_count;
 
 static const DeviceDesc_t *g_device_descs_dyn[DEVICE_REGISTRY_DYNAMIC_CAPACITY];
 static size_t g_device_descs_dyn_count = 0U;

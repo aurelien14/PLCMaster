@@ -7,7 +7,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "backends/backend_iface.h"
+#include "core/backend/backend_iface.h"
 #include "core/platform/platform_thread.h"
 #include "core/platform/platform_atomic.h"
 #include <soem/soem.h>

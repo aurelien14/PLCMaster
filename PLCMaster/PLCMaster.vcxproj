@@ -141,8 +141,8 @@
     <ClCompile Include="src\backends\ethercat\ec_backend.c" />
     <ClCompile Include="src\backends\ethercat\ec_soem_lifecycle.c" />
     <ClCompile Include="src\backends\modbus\mb_backend.c" />
-    <ClCompile Include="src\backends\registry\backend_registry.c" />
-    <ClCompile Include="src\backends\registry\backend_factories.c" />
+    <ClCompile Include="src\core\backend\backend_registry.c" />
+    <ClCompile Include="src\system\builder\backend_factories.c" />
     <ClCompile Include="src\core\platform\platform_thread.c" />
     <ClCompile Include="src\core\platform\platform_mem.c" />
     <ClCompile Include="src\core\platform\platform_time.c" />
@@ -152,8 +152,8 @@
     <ClCompile Include="src\core\tag\tag_api.c" />
     <ClCompile Include="src\core\tag\tag_table.c" />
     <ClCompile Include="src\devices\l230\l230_desc.c" />
-    <ClCompile Include="src\devices\registry\device_registry.c" />
-    <ClCompile Include="src\devices\registry\device_registry_static.c" />
+    <ClCompile Include="src\core\device\device_registry.c" />
+    <ClCompile Include="src\system\builder\device_registry_static.c" />
     <ClCompile Include="src\app\user_entry.c" />
     <ClCompile Include="src\app\io\io_bind.c" />
     <ClCompile Include="src\app\diag\ethercat_diag.c" />
@@ -165,11 +165,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\app\plc\plc_task_ctx.h" />
-    <ClInclude Include="src\backends\backend_iface.h" />
+    <ClInclude Include="src\core\backend\backend_iface.h" />
     <ClInclude Include="src\backends\ethercat\ec_backend.h" />
     <ClInclude Include="src\backends\ethercat\ec_soem_lifecycle.h" />
     <ClInclude Include="src\backends\modbus\mb_backend.h" />
-    <ClInclude Include="src\backends\registry\backend_registry.h" />
+    <ClInclude Include="src\core\backend\backend_registry.h" />
     <ClInclude Include="src\core\platform\platform_atomic.h" />
     <ClInclude Include="src\core\platform\platform_detect.h" />
     <ClInclude Include="src\core\platform\platform_mem.h" />
@@ -181,9 +181,9 @@
     <ClInclude Include="src\core\status\status_tags.h" />
     <ClInclude Include="src\core\tag\tag_api.h" />
     <ClInclude Include="src\core\tag\tag_table.h" />
-    <ClInclude Include="src\devices\device_desc.h" />
+    <ClInclude Include="src\core\device\device_desc.h" />
     <ClInclude Include="src\devices\l230\l230_desc.h" />
-    <ClInclude Include="src\devices\registry\device_registry.h" />
+    <ClInclude Include="src\core\device\device_registry.h" />
     <ClInclude Include="src\app\user_entry.h" />
     <ClInclude Include="src\app\io\io_view.h" />
     <ClInclude Include="src\app\io\io_bind.h" />
@@ -198,8 +198,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="tests\README.md" />
-    <None Include="src\backends\registry\backend_list.def" />
-    <None Include="src\devices\registry\device_list.def" />
+    <None Include="src\system\builder\backend_list.def" />
+    <None Include="src\system\builder\device_list.def" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

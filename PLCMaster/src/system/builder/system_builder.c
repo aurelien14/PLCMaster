@@ -3,9 +3,9 @@
 #include "system_builder.h"
 
 #include "core/tag/tag_api.h"
-#include "devices/registry/device_registry.h"
-#include "backends/backend_iface.h"
-#include "backends/registry/backend_registry.h"
+#include "core/device/device_registry.h"
+#include "core/backend/backend_iface.h"
+#include "core/backend/backend_registry.h"
 
 #include <stdint.h>
 #include <stdio.h>
