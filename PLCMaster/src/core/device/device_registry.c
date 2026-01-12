@@ -19,14 +19,18 @@ const DeviceDesc_t *device_registry_find(const char *model)
 	}
 
 	for (i = 0U; i < g_device_descs_count; ++i) {
-		if (strcmp(g_device_descs[i]->model, model) == 0) {
-			return g_device_descs[i];
+		const DeviceDesc_t *desc = g_device_descs[i];
+
+		if (desc != NULL && desc->model != NULL && strcmp(desc->model, model) == 0) {
+			return desc;
 		}
 	}
 
 	for (i = 0U; i < g_device_descs_dyn_count; ++i) {
-		if (strcmp(g_device_descs_dyn[i]->model, model) == 0) {
-			return g_device_descs_dyn[i];
+		const DeviceDesc_t *desc = g_device_descs_dyn[i];
+
+		if (desc != NULL && desc->model != NULL && strcmp(desc->model, model) == 0) {
+			return desc;
 		}
 	}
 

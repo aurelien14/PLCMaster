@@ -7,30 +7,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "core/backend/backend_iface.h"
+#include "core/backend/backend_config.h"
 #include "app/plc/plc_app.h"
 #include "core/runtime/runtime.h"
-#include "core/platform/platform_thread.h"
 #include "core/device/device_desc.h"
-
-typedef struct BackendConfig
-{
-	BackendType_t type;
-	const char *name;
-	const char *ifname;	/* TODO: set interface name */
-	uint32_t cycle_time_us;
-	bool dc_clock;
-	uint32_t period_ns;
-	uint32_t spin_threshold_ns;
-	PlatThreadPriority_t rt_priority;
-	int rt_affinity_cpu;	/* -1 = none */
-	int rt_reserved_cpu;	/* shared default for EtherCAT RT affinity */
-	uint32_t rt_timer_resolution_ms;
-	uint32_t wkc_warn_threshold;
-	uint32_t wkc_fail_threshold;
-	uint32_t warmup_cycles;
-	uint32_t state_check_period_ms;
-} BackendConfig_t;
 
 typedef struct DeviceConfig
 {
