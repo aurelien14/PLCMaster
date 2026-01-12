@@ -5,8 +5,8 @@
 
 #include <stddef.h>
 
+#include "core/backend/backend_config.h"
 #include "core/backend/backend_iface.h"
-#include "app/config/config_static.h"
 
 typedef BackendDriver_t *(*BackendCreateFn)(const BackendConfig_t *cfg,
 	size_t iomap_hint,

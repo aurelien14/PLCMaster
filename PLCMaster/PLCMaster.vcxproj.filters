@@ -185,6 +185,9 @@
     <ClInclude Include="src\app\plc\plc_task_ctx.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
+    <ClInclude Include="src\core\backend\backend_config.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="tests\README.md" />

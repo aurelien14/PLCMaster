@@ -1,7 +1,7 @@
 /* PLC task registry implementation. */
 
 #include <stdbool.h>
-
+#include <stdio.h>
 #include "app/plc/plc_task_ctx.h"
 #include "app/plc/plc_tasks.h"
 #include "core/tag/tag_api.h"
@@ -21,7 +21,23 @@ static int plc_task_heartbeat(void* ctx)
 		return -1;
 	}
 	state = !state;
-	return tag_write_bool(c->rt, c->app->io.X15_Out0, state);
+	tag_write_bool(c->rt, c->app->io.X15_Out0, state);
+	tag_write_bool(c->rt, c->app->io.X14_Out5, !state);
+
+	TagId_t counter = tag_table_find_id(&c->rt->tag_table, "proc.counter_test");
+	if (counter == 0) {
+		printf("error to find tag\n");
+	}
+	uint32_t counter_val;
+	if (tag_read_u32(c->rt, counter, &counter_val) < 0) {
+		printf("error to read tag\n");
+	}
+	counter_val++;
+	tag_write_u32(c->rt, counter, counter_val);
+	if (counter_val % 10 == 0) {
+		printf("[TASK] counter = %d\n", counter_val);
+	}
+	return 0;
 }
 
 static const PLC_TaskDesc_t kPlcTasks[] = {

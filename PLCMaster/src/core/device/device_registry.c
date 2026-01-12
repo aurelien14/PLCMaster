@@ -19,14 +19,18 @@ const DeviceDesc_t *device_registry_find(const char *model)
 	}
 
 	for (i = 0U; i < g_device_descs_count; ++i) {
-		if (strcmp(g_device_descs[i]->model, model) == 0) {
-			return g_device_descs[i];
+		const DeviceDesc_t *desc = g_device_descs[i];
+
+		if (desc != NULL && desc->model != NULL && strcmp(desc->model, model) == 0) {
+			return desc;
 		}
 	}
 
 	for (i = 0U; i < g_device_descs_dyn_count; ++i) {
-		if (strcmp(g_device_descs_dyn[i]->model, model) == 0) {
-			return g_device_descs_dyn[i];
+		const DeviceDesc_t *desc = g_device_descs_dyn[i];
+
+		if (desc != NULL && desc->model != NULL && strcmp(desc->model, model) == 0) {
+			return desc;
 		}
 	}
 
@@ -42,16 +46,21 @@ int device_registry_register_dynamic(const DeviceDesc_t *descriptor)
 	}
 
 	for (i = 0U; i < g_device_descs_count; ++i) {
-		if (strcmp(g_device_descs[i]->model, descriptor->model) == 0) {
+		const DeviceDesc_t* desc = g_device_descs[i];
+
+		if (desc != NULL && desc->model != NULL && strcmp(desc->model, descriptor->model) == 0) {
 			return 0;
 		}
 	}
 
 	for (i = 0U; i < g_device_descs_dyn_count; ++i) {
-		if (strcmp(g_device_descs_dyn[i]->model, descriptor->model) == 0) {
+		const DeviceDesc_t* desc = g_device_descs_dyn[i];
+
+		if (desc != NULL && desc->model != NULL && strcmp(desc->model, descriptor->model) == 0) {
 			return 0;
 		}
 	}
+
 
 	if (g_device_descs_dyn_count >= DEVICE_REGISTRY_DYNAMIC_CAPACITY) {
 		return -1;

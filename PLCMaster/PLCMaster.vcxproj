@@ -165,6 +165,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\app\plc\plc_task_ctx.h" />
+    <ClInclude Include="src\core\backend\backend_config.h" />
     <ClInclude Include="src\core\backend\backend_iface.h" />
     <ClInclude Include="src\backends\ethercat\ec_backend.h" />
     <ClInclude Include="src\backends\ethercat\ec_soem_lifecycle.h" />
