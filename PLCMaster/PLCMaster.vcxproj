@@ -155,6 +155,7 @@
     <ClCompile Include="src\backends\ethercat\ec_soem_lifecycle.c" />
     <ClCompile Include="src\backends\modbus\mb_backend.c" />
     <ClCompile Include="src\devices\l230\l230_desc.c" />
+    <ClCompile Include="src\devices\l400\l400_desc.c" />
     <ClCompile Include="src\system\builder\backend_factories.c" />
     <ClCompile Include="src\system\builder\device_registry_static.c" />
     <ClCompile Include="src\system\builder\system_builder.c" />
@@ -203,12 +204,12 @@
     <ClInclude Include="src\app\diag\ethercat_diag.h" />
     <ClInclude Include="src\core\plc\plc_scheduler.h" />
     <ClInclude Include="src\core\plc\plc_task.h" />
+    <ClInclude Include="src\devices\l400\l400_desc.h" />
     <ClInclude Include="src\services\tcp\tag_tcp_server.h" />
     <ClInclude Include="src\system\builder\system_builder.h" />
     <ClInclude Include="src\app\config\config_static.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="tests\README.md" />
     <None Include="src\system\builder\backend_list.def" />
     <None Include="src\system\builder\device_list.def" />
   </ItemGroup>

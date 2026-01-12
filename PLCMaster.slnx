@@ -4,5 +4,4 @@
     <Platform Name="x86" />
   </Configurations>
   <Project Path="PLCMaster/PLCMaster.vcxproj" Id="3294e1cb-e1c1-4ddf-beaf-c125a037e139" />
-  <Project Path="PLCMaster/plc_tests.vcxproj" Id="A1CB4CE8-A042-44D7-AA72-FC2C1AABE1E6" />
 </Solution>
