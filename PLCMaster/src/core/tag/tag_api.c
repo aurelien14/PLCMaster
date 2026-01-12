@@ -90,8 +90,8 @@ static const uint8_t *get_io_read_base(Runtime_t *rt, const TagEntry_t *entry, u
 		return NULL;
 	}
 
-	drv = &rt->backends[entry->ref.io.backend_index];
-	if (drv->ops == NULL) {
+	drv = rt->backends[entry->ref.io.backend_index];
+	if (drv == NULL || drv->ops == NULL) {
 		return NULL;
 	}
 
@@ -128,8 +128,8 @@ static uint8_t *get_io_write_base(Runtime_t *rt, const TagEntry_t *entry, uint32
 		return NULL;
 	}
 
-	drv = &rt->backends[entry->ref.io.backend_index];
-	if (drv->ops == NULL || drv->ops->get_output_data == NULL) {
+	drv = rt->backends[entry->ref.io.backend_index];
+	if (drv == NULL || drv->ops == NULL || drv->ops->get_output_data == NULL) {
 		return NULL;
 	}
 

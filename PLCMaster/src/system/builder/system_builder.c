@@ -64,20 +64,22 @@ static void cleanup_backends(Runtime_t *rt)
 {
 	size_t idx;
 
-	if (rt == NULL) {
+	if (rt == NULL)
+	{
 		return;
 	}
 
-	for (idx = 0; idx < rt->backend_count && idx < MAX_BACKENDS; ++idx) {
-		BackendDriver_t *drv = &rt->backend_array[idx];
-		if (drv->impl != NULL) {
+	for (idx = 0; idx < rt->backend_count && idx < MAX_BACKENDS; ++idx)
+	{
+		BackendDriver_t *drv = rt->backends[idx];
+		if (drv != NULL)
+		{
 			backend_destroy(drv);
 		}
-		memset(drv, 0, sizeof(*drv));
+		rt->backend_array[idx] = NULL;
 	}
 
 	rt->backend_count = 0U;
-	rt->backends = NULL;
 }
 
 static uint32_t tag_type_size(TagType_t type)
@@ -284,12 +286,6 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 			goto cleanup;
 		}
 
-		drv = &rt->backend_array[rt->backend_count];
-		memset(drv, 0, sizeof(*drv));
-		if (snprintf(drv->name, sizeof(drv->name), "%s", backend_cfg->name) < 0) {
-			goto cleanup;
-		}
-
 		for (device_index = 0; device_index < config->device_count; ++device_index) {
 			const DeviceConfig_t *device_cfg = &config->devices[device_index];
 			const DeviceDesc_t *desc = device_registry_find(device_cfg->model);
@@ -312,9 +308,9 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 			goto cleanup;
 		}
 
-		rt->backend_array[rt->backend_count] = *drv;
-		drv = &rt->backend_array[rt->backend_count];
+		rt->backend_array[rt->backend_count] = drv;
 		rt->backend_count++;
+		rt->backends = rt->backend_array;
 		backends_initialized = 1;
 
 		if (drv->ops == NULL || drv->ops->init == NULL || drv->ops->bind == NULL || drv->ops->finalize == NULL) {

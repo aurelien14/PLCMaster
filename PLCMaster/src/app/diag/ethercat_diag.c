@@ -38,7 +38,11 @@ void ethercat_diag_print(const Runtime_t *rt)
 
 	for (i = 0; i < rt->backend_count; ++i)
 	{
-		const BackendDriver_t *drv = &rt->backends[i];
+		const BackendDriver_t *drv = rt->backends[i];
+		if (drv == NULL)
+		{
+			continue;
+		}
 		if (drv->type == BACKEND_TYPE_ETHERCAT)
 		{
 			ethercat_log_driver(drv);

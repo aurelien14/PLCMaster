@@ -2,11 +2,6 @@
 
 #include "core/backend/backend_registry.h"
 
-#define BACKEND_REGISTRY_DYNAMIC_CAPACITY 16
-
-static BackendFactoryEntry_t g_backend_factories_dyn[BACKEND_REGISTRY_DYNAMIC_CAPACITY];
-static size_t g_backend_factories_dyn_count = 0U;
-
 static const BackendFactoryEntry_t *backend_registry_find_factory(BackendType_t type)
 {
 	size_t i;
@@ -14,12 +9,6 @@ static const BackendFactoryEntry_t *backend_registry_find_factory(BackendType_t 
 	for (i = 0U; i < g_backend_factories_count; ++i) {
 		if (g_backend_factories[i].type == type) {
 			return &g_backend_factories[i];
-		}
-	}
-
-	for (i = 0U; i < g_backend_factories_dyn_count; ++i) {
-		if (g_backend_factories_dyn[i].type == type) {
-			return &g_backend_factories_dyn[i];
 		}
 	}
 
@@ -66,22 +55,4 @@ void backend_destroy(BackendDriver_t *drv)
 	if (factory != NULL && factory->destroy != NULL) {
 		factory->destroy(drv);
 	}
-}
-
-int backend_registry_register_dynamic(const BackendFactoryEntry_t *e)
-{
-	if (e == NULL || e->type == BACKEND_TYPE_NONE || e->create == NULL) {
-		return -1;
-	}
-
-	if (backend_registry_find_factory(e->type) != NULL) {
-		return 0;
-	}
-
-	if (g_backend_factories_dyn_count >= BACKEND_REGISTRY_DYNAMIC_CAPACITY) {
-		return -1;
-	}
-
-	g_backend_factories_dyn[g_backend_factories_dyn_count++] = *e;
-	return 0;
 }
