@@ -86,6 +86,23 @@ static const HmiTagDesc_t kHmiTagDescs[] = {
 	},
 };
 
+static const PLC_TaskConfig_t kPlcTaskConfigs[] = {
+	{
+		.name = "noop",
+		.period_ms = 1000U,
+		.phase_ms = 0U,
+		.policy = PLC_TASK_SKIP_ON_FAULT,
+		.enabled = true,
+	},
+	{
+		.name = "heartbeat",
+		.period_ms = 500U,
+		.phase_ms = 0U,
+		.policy = PLC_TASK_ALWAYS_RUN,
+		.enabled = true,
+	},
+};
+
 static const SystemConfig_t kStaticConfig = {
 	.backends = kBackendConfigs,
 	.backend_count = sizeof(kBackendConfigs) / sizeof(kBackendConfigs[0]),
@@ -101,4 +118,14 @@ static const SystemConfig_t kStaticConfig = {
 const SystemConfig_t *get_static_config(void)
 {
 	return &kStaticConfig;
+}
+
+const PLC_TaskConfig_t *app_config_get_plc_tasks(size_t *out_count)
+{
+	if (out_count != NULL)
+	{
+		*out_count = sizeof(kPlcTaskConfigs) / sizeof(kPlcTaskConfigs[0]);
+	}
+
+	return kPlcTaskConfigs;
 }
