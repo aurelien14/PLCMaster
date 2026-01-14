@@ -47,9 +47,14 @@ static const ProcessVarDesc_t kProcessVarDescs[] = {
 		.initial = {.f = 20.0f},
 	},
 	{
-		.name = "run_cmd",
+		.name = "chamber_run_cmd",
 		.type = TAG_T_BOOL,
 		.initial = {.b = false},
+	},
+	{
+		.name = "alarm_state",
+		.type = TAG_T_BOOL,
+		.initial = {.b = 0},
 	},
 	{
 		.name = "alarm_code",
@@ -66,17 +71,22 @@ static const ProcessVarDesc_t kProcessVarDescs[] = {
 static const HmiTagDesc_t kHmiTagDescs[] = {
 	{
 		.name = "temp_setpoint",
-		.alias_of = "proc.temp_sp",
+		.alias_of = "hmi.temp_sp",
 		.access = HMI_RW,
 	},
 	{
 		.name = "run",
-		.alias_of = "proc.run_cmd",
+		.alias_of = "prhmioc.chamber_run_cmd",
 		.access = HMI_RW,
 	},
 	{
+		.name = "alarm_state",
+		.alias_of = "hmi.alarm_state",
+		.access = HMI_RO,
+	},
+	{
 		.name = "alarm_code",
-		.alias_of = "proc.alarm_code",
+		.alias_of = "hmi.alarm_code",
 		.access = HMI_RO,
 	},
 	{

@@ -3,8 +3,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "app/plc/tasks/plc_tasks.h"
-#include "app/plc/tasks/plc_task_ctx.h"
-#include "core/tag/tag_api.h"
+#include "temp_converter.h"
 
 int plc_task_noop(void* ctx)
 {
@@ -38,4 +37,24 @@ int plc_task_heartbeat(void* ctx)
 		printf("[TASK] counter = %d\n", counter_val);
 	}
 	return 0;
+}
+
+int process_analog_inputs(void* ctx)
+{
+	PlcTaskCtx_t* c = (PlcTaskCtx_t*)ctx;
+	float temp_cuve;
+	bool temp_cuve_state, alarm_state;
+
+
+	tag_read_bool(c->rt, c->app->io.X21_CPU_Pt1_Pt_State, &temp_cuve_state);
+	if (temp_cuve_state == 0) {
+		//error
+		alarm_state = 1;
+	}
+	else {
+		tag_read_real(c->rt, c->app->io.X21_CPU_Pt1_Pt_Value, &temp_cuve);
+	}
+	
+
+	//tag_write_bool(c->rt, c->app->.HMI_alarm_state, alarm_state);
 }

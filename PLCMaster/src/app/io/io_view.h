@@ -7,6 +7,7 @@
 
 typedef struct IOView
 {
+	//physical IOs
 	TagId_t X15_Out0;
 	TagId_t X12_Out1;
 	TagId_t X13_Out2;
