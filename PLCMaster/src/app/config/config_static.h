@@ -9,6 +9,7 @@
 
 #include "core/backend/backend_config.h"
 #include "app/plc/plc_app.h"
+#include "core/plc/plc_task.h"
 #include "core/runtime/runtime.h"
 #include "core/device/device_desc.h"
 
@@ -65,6 +66,16 @@ typedef struct SystemConfig
 	uint32_t plc_scheduler_base_cycle_ms;	/* PLC scheduler base tick (ms) */
 } SystemConfig_t;
 
+typedef struct PLC_TaskConfig
+{
+	const char *name;		/* "heartbeat" */
+	uint32_t period_ms;		/* ex: 500 */
+	uint32_t phase_ms;		/* ex: 0 */
+	PlcTaskPolicy_t policy;		/* ALWAYS_RUN / SKIP_ON_FAULT / ONLY_WHEN_OK */
+	bool enabled;			/* true by default */
+} PLC_TaskConfig_t;
+
 const SystemConfig_t *get_static_config(void);
+const PLC_TaskConfig_t *app_config_get_plc_tasks(size_t *out_count);
 
 #endif /* CONFIG_STATIC_H */
