@@ -25,6 +25,8 @@
     <ClCompile Include="src\services\tcp\tag_tcp_server.c" />
     <ClCompile Include="src\app\user_entry.c" />
     <ClCompile Include="src\app\io\io_bind.c" />
+    <ClCompile Include="src\app\io\hmi_view.c" />
+    <ClCompile Include="src\app\io\proc_view.c" />
     <ClCompile Include="src\app\diag\ethercat_diag.c" />
     <ClCompile Include="src\app\plc\plc_tasks.c" />
     <ClCompile Include="src\app\plc_runtime.c" />
@@ -62,6 +64,8 @@
     <ClInclude Include="src\app\user_entry.h" />
     <ClInclude Include="src\app\io\io_view.h" />
     <ClInclude Include="src\app\io\io_bind.h" />
+    <ClInclude Include="src\app\io\hmi_view.h" />
+    <ClInclude Include="src\app\io\proc_view.h" />
     <ClInclude Include="src\app\plc\plc_app.h" />
     <ClInclude Include="src\app\plc\plc_tasks.h" />
     <ClInclude Include="src\app\plc_runtime.h" />
