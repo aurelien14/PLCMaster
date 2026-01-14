@@ -9,7 +9,7 @@
 #include "app/user_entry.h"
 #include "core/plc/plc_scheduler.h"
 #include "system/builder/system_builder.h"
-#include "app/plc_runtime.h"
+#include "app/plc/plc_runtime.h"
 
 typedef struct
 {
