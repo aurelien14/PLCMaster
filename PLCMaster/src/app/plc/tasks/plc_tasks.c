@@ -15,26 +15,37 @@ int plc_task_heartbeat(void* ctx)
 {
 	PlcTaskCtx_t *c = (PlcTaskCtx_t*)ctx;
 	static bool state = false;
-	if (c == NULL || c->rt == NULL || c->app == NULL)
+	bool run = false;
+	if (c == NULL || c->rt == NULL || c->io == NULL || c->hmi == NULL || c->proc == NULL)
 	{
 		return -1;
 	}
 	state = !state;
-	tag_write_bool(c->rt, c->app->io.X15_Out0, state);
-	tag_write_bool(c->rt, c->app->io.X14_Out5, !state);
+	if (tag_read_bool(c->rt, c->hmi->run, &run) != 0)
+	{
+		printf("error to read hmi.run\n");
+		return -1;
+	}
 
-	TagId_t counter = tag_table_find_id(&c->rt->tag_table, "proc.counter_test");
-	if (counter == 0) {
-		printf("error to find tag\n");
+	if (run)
+	{
+		tag_write_bool(c->rt, c->io->X15_Out0, state);
+		tag_write_bool(c->rt, c->io->X14_Out5, !state);
 	}
-	uint32_t counter_val;
-	if (tag_read_u32(c->rt, counter, &counter_val) < 0) {
-		printf("error to read tag\n");
-	}
-	counter_val++;
-	tag_write_u32(c->rt, counter, counter_val);
-	if (counter_val % 10 == 0) {
-		printf("[TASK] counter = %d\n", counter_val);
+
+	{
+		uint32_t counter_val = 0;
+		if (tag_read_u32(c->rt, c->proc->counter_test, &counter_val) != 0)
+		{
+			printf("error to read proc.counter_test\n");
+			return -1;
+		}
+		counter_val++;
+		tag_write_u32(c->rt, c->proc->counter_test, counter_val);
+		if (counter_val % 10 == 0)
+		{
+			printf("[TASK] counter = %d\n", counter_val);
+		}
 	}
 	return 0;
 }
@@ -46,13 +57,13 @@ int process_analog_inputs(void* ctx)
 	bool temp_cuve_state, alarm_state;
 
 
-	tag_read_bool(c->rt, c->app->io.X21_CPU_Pt1_Pt_State, &temp_cuve_state);
+	tag_read_bool(c->rt, c->io->X21_CPU_Pt1_Pt_State, &temp_cuve_state);
 	if (temp_cuve_state == 0) {
 		//error
 		alarm_state = 1;
 	}
 	else {
-		tag_read_real(c->rt, c->app->io.X21_CPU_Pt1_Pt_Value, &temp_cuve);
+		tag_read_real(c->rt, c->io->X21_CPU_Pt1_Pt_Value, &temp_cuve);
 	}
 	
 

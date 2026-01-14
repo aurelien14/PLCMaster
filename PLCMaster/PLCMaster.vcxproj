@@ -137,6 +137,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\app\io\hmi_view.c" />
+    <ClCompile Include="src\app\io\proc_view.c" />
     <ClCompile Include="src\app\plc\libs\temp_converter.c" />
     <ClCompile Include="src\app\plc\plc_task_registry.c" />
     <ClCompile Include="src\core\backend\backend_registry.c" />
@@ -202,6 +204,8 @@
     <ClInclude Include="src\app\user_entry.h" />
     <ClInclude Include="src\app\io\io_view.h" />
     <ClInclude Include="src\app\io\io_bind.h" />
+    <ClInclude Include="src\app\io\hmi_view.h" />
+    <ClInclude Include="src\app\io\proc_view.h" />
     <ClInclude Include="src\app\plc\plc_app.h" />
     <ClInclude Include="src\app\plc\tasks\plc_tasks.h" />
     <ClInclude Include="src\app\plc\plc_runtime.h" />

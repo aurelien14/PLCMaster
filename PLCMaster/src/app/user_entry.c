@@ -5,6 +5,8 @@
 
 #include "app/user_entry.h"
 #include "app/io/io_bind.h"
+#include "app/io/hmi_view.h"
+#include "app/io/proc_view.h"
 #include "core/plc/plc_task.h"
 #include "app/plc/tasks/plc_task_ctx.h"
 #include "app/plc/plc_task_registry.h"
@@ -23,7 +25,22 @@ int user_bind(PlcApp_t *app, Runtime_t *rt)
 		return -1;
 	}
 
-	return io_view_bind(&app->io, &rt->tag_table);
+	if (io_view_bind(&app->io, &rt->tag_table) != 0)
+	{
+		return -1;
+	}
+
+	if (hmi_view_bind(&app->hmi, &rt->tag_table) != 0)
+	{
+		return -1;
+	}
+
+	if (proc_view_bind(&app->proc, &rt->tag_table) != 0)
+	{
+		return -1;
+	}
+
+	return 0;
 }
 
 int user_register_plc_tasks(PlcScheduler_t *sched, Runtime_t *rt, PlcApp_t *app)
@@ -45,7 +62,9 @@ int user_register_plc_tasks(PlcScheduler_t *sched, Runtime_t *rt, PlcApp_t *app)
 	}
 
 	g_task_ctx.rt = rt;
-	g_task_ctx.app = app;
+	g_task_ctx.io = &app->io;
+	g_task_ctx.hmi = &app->hmi;
+	g_task_ctx.proc = &app->proc;
 
 	for (task_index = 0; task_index < task_count; ++task_index)
 	{
