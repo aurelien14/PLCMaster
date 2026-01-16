@@ -5,10 +5,9 @@
 
 #include <stdint.h>
 #include "core/device/device_desc.h"
+#include "core/tag/tag_id.h"
 
 #define MAX_TAGS 256U
-
-typedef uint32_t TagId_t; /* 0 = invalid */
 
 typedef enum TagKind
 {

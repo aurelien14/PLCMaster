@@ -3,6 +3,7 @@
 #ifndef PROC_VIEW_H
 #define PROC_VIEW_H
 
+#include "core/tag/tag_id.h"
 #include "core/tag/tag_table.h"
 
 typedef struct
