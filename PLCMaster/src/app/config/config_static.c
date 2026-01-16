@@ -76,7 +76,7 @@ static const HmiTagDesc_t kHmiTagDescs[] = {
 	},
 	{
 		.name = "run",
-		.alias_of = "prhmioc.chamber_run_cmd",
+		.alias_of = "hmi.chamber_run_cmd",
 		.access = HMI_RW,
 	},
 	{
