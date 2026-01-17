@@ -1,45 +1,46 @@
 /* HMI view bindings. */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
+#include "app/config/config_static.h"
 #include "app/io/hmi_view.h"
 
-int hmi_view_bind(HMIView_t *hmi, const TagTable_t *tags)
+static int bind_view_by_offset(void *view, size_t view_size, const TagTable_t *tags, const AppTagBind_t *binds,
+			       size_t bind_count, const char *label)
 {
-	typedef struct
-	{
-		TagId_t *dst;
-		const char *name;
-	} HmiBindDesc_t;
-
-	const HmiBindDesc_t kHmiBinds[] = {
-		{ &hmi->temp_setpoint, "hmi.temp_setpoint" },
-		{ &hmi->run, "hmi.run" },
-		{ &hmi->alarm_state, "hmi.alarm_state" },
-		{ &hmi->alarm_code, "hmi.alarm_code" },
-		{ &hmi->counter_test, "hmi.counter_test" },
-	};
 	size_t index;
 
-	if (hmi == NULL || tags == NULL)
+	if (view == NULL || tags == NULL || binds == NULL || bind_count == 0)
 	{
 		return -1;
 	}
 
-	memset(hmi, 0, sizeof(*hmi));
+	memset(view, 0, view_size);
 
-	for (index = 0; index < (sizeof(kHmiBinds) / sizeof(kHmiBinds[0])); ++index)
+	for (index = 0; index < bind_count; ++index)
 	{
-		TagId_t id = tag_table_find_id(tags, kHmiBinds[index].name);
+		TagId_t id = tag_table_find_id(tags, binds[index].name);
 		if (id == 0)
 		{
-			printf("Missing HMI tag: %s\n", kHmiBinds[index].name);
+			printf("Missing %s tag: %s\n", label, binds[index].name);
 			return -1;
 		}
 
-		*(kHmiBinds[index].dst) = id;
+		{
+			TagId_t *dst = (TagId_t *)((uint8_t *)view + binds[index].offset);
+			*dst = id;
+		}
 	}
 
 	return 0;
+}
+
+int hmi_view_bind(HMIView_t *hmi, const TagTable_t *tags)
+{
+	size_t count = 0;
+	const AppTagBind_t *binds = app_config_get_hmi_view_binds(&count);
+
+	return bind_view_by_offset(hmi, sizeof(*hmi), tags, binds, count, "HMI");
 }

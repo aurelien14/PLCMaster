@@ -1,41 +1,46 @@
 /* Proc view bindings. */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
+#include "app/config/config_static.h"
 #include "app/io/proc_view.h"
 
-int proc_view_bind(ProcView_t *proc, const TagTable_t *tags)
+static int bind_view_by_offset(void *view, size_t view_size, const TagTable_t *tags, const AppTagBind_t *binds,
+			       size_t bind_count, const char *label)
 {
-	typedef struct
-	{
-		TagId_t *dst;
-		const char *name;
-	} ProcBindDesc_t;
-
-	const ProcBindDesc_t kProcBinds[] = {
-		{ &proc->counter_test, "proc.counter_test" },
-	};
 	size_t index;
 
-	if (proc == NULL || tags == NULL)
+	if (view == NULL || tags == NULL || binds == NULL || bind_count == 0)
 	{
 		return -1;
 	}
 
-	memset(proc, 0, sizeof(*proc));
+	memset(view, 0, view_size);
 
-	for (index = 0; index < (sizeof(kProcBinds) / sizeof(kProcBinds[0])); ++index)
+	for (index = 0; index < bind_count; ++index)
 	{
-		TagId_t id = tag_table_find_id(tags, kProcBinds[index].name);
+		TagId_t id = tag_table_find_id(tags, binds[index].name);
 		if (id == 0)
 		{
-			printf("Missing PROC tag: %s\n", kProcBinds[index].name);
+			printf("Missing %s tag: %s\n", label, binds[index].name);
 			return -1;
 		}
 
-		*(kProcBinds[index].dst) = id;
+		{
+			TagId_t *dst = (TagId_t *)((uint8_t *)view + binds[index].offset);
+			*dst = id;
+		}
 	}
 
 	return 0;
+}
+
+int proc_view_bind(ProcView_t *proc, const TagTable_t *tags)
+{
+	size_t count = 0;
+	const AppTagBind_t *binds = app_config_get_proc_view_binds(&count);
+
+	return bind_view_by_offset(proc, sizeof(*proc), tags, binds, count, "PROC");
 }
