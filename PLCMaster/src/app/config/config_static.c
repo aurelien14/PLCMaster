@@ -48,54 +48,74 @@ static const ProcessVarDesc_t kProcessVarDescs[] = {
 		.name = "temp_sp",
 		.type = TAG_T_REAL,
 		.initial = {.f = 20.0f},
+		.retain = false,
 	},
 	{
 		.name = "chamber_run_cmd",
 		.type = TAG_T_BOOL,
 		.initial = {.b = false},
+		.retain = false,
 	},
 	{
 		.name = "alarm_state",
 		.type = TAG_T_BOOL,
 		.initial = {.b = 0},
+		.retain = false,
 	},
 	{
 		.name = "alarm_code",
 		.type = TAG_T_U16,
 		.initial = {.u16 = 0},
+		.retain = false,
 	},
 	{
 		.name = "counter_test",
 		.type = TAG_T_U32,
 		.initial = {.u32 = 0},
+		.retain = false,
 	},
 };
 
 static const HmiTagDesc_t kHmiTagDescs[] = {
 	{
 		.name = "temp_setpoint",
-		.alias_of = "proc.temp_sp",
 		.access = HMI_RW,
+		.kind = HMI_TAG_ALIAS,
+		.alias = {.alias_of = "proc.temp_sp"},
 	},
 	{
 		.name = "run",
-		.alias_of = "proc.chamber_run_cmd",
 		.access = HMI_RW,
+		.kind = HMI_TAG_ALIAS,
+		.alias = {.alias_of = "proc.chamber_run_cmd"},
 	},
 	{
 		.name = "alarm_state",
-		.alias_of = "proc.alarm_state",
 		.access = HMI_RO,
+		.kind = HMI_TAG_ALIAS,
+		.alias = {.alias_of = "proc.alarm_state"},
 	},
 	{
 		.name = "alarm_code",
-		.alias_of = "proc.alarm_code",
 		.access = HMI_RO,
+		.kind = HMI_TAG_ALIAS,
+		.alias = {.alias_of = "proc.alarm_code"},
 	},
 	{
 		.name = "counter_test",
-		.alias_of = "proc.counter_test",
 		.access = HMI_RO,
+		.kind = HMI_TAG_ALIAS,
+		.alias = {.alias_of = "proc.counter_test"},
+	},
+	{
+		.name = "FactoryResetCmd",
+		.access = HMI_RW,
+		.kind = HMI_TAG_VAR,
+		.var = {
+			.type = TAG_T_BOOL,
+			.initial = {.b = false},
+			.retain = false,
+		},
 	},
 };
 

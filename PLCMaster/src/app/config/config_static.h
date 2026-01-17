@@ -43,14 +43,41 @@ typedef struct ProcessVarDesc
 		uint16_t u16;
 		bool b;
 	} initial;
+	bool retain;
 } ProcessVarDesc_t;
 
 typedef enum { HMI_RO = 0, HMI_RW = 1 } HmiAccess_t;
+typedef enum
+{
+	HMI_TAG_ALIAS = 0,
+	HMI_TAG_VAR = 1,
+} HmiTagKind_t;
 typedef struct HmiTagDesc
 {
 	const char *name;	/* ex: "temp_setpoint" */
-	const char *alias_of;	/* ex: "proc.temp_sp" */
 	HmiAccess_t access;	/* RO/RW */
+	HmiTagKind_t kind;
+	union
+	{
+		struct
+		{
+			const char *alias_of;	/* ex: "proc.temp_sp" */
+		} alias;
+		struct
+		{
+			TagType_t type;
+			union
+			{
+				int i;
+				uint32_t u32;
+				float f;
+				uint8_t u8;
+				uint16_t u16;
+				bool b;
+			} initial;
+			bool retain;
+		} var;
+	};
 } HmiTagDesc_t;
 
 typedef struct SystemConfig

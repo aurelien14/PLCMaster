@@ -14,7 +14,8 @@ typedef enum TagKind
 	TAGK_INVALID = 0,
 	TAGK_IO = 1,
 	TAGK_PROC = 2,
-	TAGK_HMI_ALIAS = 3
+	TAGK_HMI_ALIAS = 3,
+	TAGK_HMI_VAR = 4
 } TagKind_t;
 
 typedef struct TagIORef
@@ -37,6 +38,12 @@ typedef struct TagHmiAliasRef
 	uint8_t access;
 } TagHmiAliasRef_t;
 
+typedef struct TagHmiVarRef
+{
+	uint32_t index;
+	uint8_t access;
+} TagHmiVarRef_t;
+
 typedef struct TagEntry
 {
 	const char *full_name;
@@ -48,6 +55,7 @@ typedef struct TagEntry
 		TagIORef_t io;
 		TagProcRef_t proc;
 		TagHmiAliasRef_t hmi_alias;
+		TagHmiVarRef_t hmi_var;
 	} ref;
 } TagEntry_t;
 

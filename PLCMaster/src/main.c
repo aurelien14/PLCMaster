@@ -6,16 +6,20 @@
 #include "core/ipc/tag_rpc.h"
 #include "core/ipc/tag_rpc_plc.h"
 #include "core/runtime/runtime.h"
+#include "core/tag/tag_api.h"
 #include "app/user_entry.h"
 #include "core/plc/plc_scheduler.h"
 #include "system/builder/system_builder.h"
 #include "app/plc/plc_runtime.h"
+#include "app/plc/store_init.h"
 
 typedef struct
 {
 	Runtime_t *rt;
 	PlcScheduler_t *sched;
 	TagRpcChannel_t *rpc;
+	const SystemConfig_t *cfg;
+	TagId_t factory_reset_cmd;
 } PlcCycleCtx_t;
 
 static void plc_cycle_end(void *user)
@@ -56,6 +60,18 @@ static void plc_cycle_begin(void *user)
 	if (ctx != NULL && ctx->rpc != NULL)
 	{
 		tag_rpc_plc_poll(ctx->rpc, rt, 16);
+	}
+
+	if (ctx != NULL && ctx->cfg != NULL && ctx->factory_reset_cmd != 0)
+	{
+		bool cmd = false;
+		if (tag_read_bool(rt, ctx->factory_reset_cmd, &cmd) == 0 && cmd)
+		{
+			(void)tag_write_bool(rt, ctx->factory_reset_cmd, false);
+			printf("[INIT] Factory reset requested via hmi.FactoryResetCmd\n");
+			(void)hmi_init(rt, ctx->cfg->hmi_tags, ctx->cfg->hmi_tag_count, START_HMI_INIT);
+			(void)proc_init(rt, ctx->cfg->process_vars, ctx->cfg->process_var_count, START_COLD);
+		}
 	}
 
 	runtime_backends_cycle_begin(rt);
@@ -99,6 +115,12 @@ int main(void)
 
 	if (rc == 0)
 	{
+		(void)proc_init(&rt, cfg->process_vars, cfg->process_var_count, START_FACTORY);
+		(void)hmi_init(&rt, cfg->hmi_tags, cfg->hmi_tag_count, START_FACTORY);
+	}
+
+	if (rc == 0)
+	{
 		rc = user_bind(&app, &rt);
 	}
 
@@ -117,6 +139,12 @@ int main(void)
 		cycle_ctx.rt = &rt;
 		cycle_ctx.sched = &sched;
 		cycle_ctx.rpc = &rpc;
+		cycle_ctx.cfg = cfg;
+		cycle_ctx.factory_reset_cmd = tag_table_find_id(&rt.tag_table, "hmi.FactoryResetCmd");
+		if (cycle_ctx.factory_reset_cmd == 0)
+		{
+			printf("[INIT] Factory reset tag not found: hmi.FactoryResetCmd\n");
+		}
 		rc = plc_scheduler_set_callbacks(&sched, plc_cycle_begin, plc_cycle_end, &cycle_ctx);
 	}
 
