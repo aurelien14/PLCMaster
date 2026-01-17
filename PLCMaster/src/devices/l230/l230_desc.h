@@ -47,7 +47,7 @@ typedef struct
 	// RxPDO 0x1603 - X21_CPU_Pt2
 	uint32_t X22_CPU_Pt2_Ctrl;
 	// RxPDO 0x1604 - X21_CPU_VC1
-	uint32_t X23_CPU_VC1_Ctrl; //<Comment>16#80000000 = Channel Off
+	uint32_t X23_CPU_VC1_Ctrl; //<Comment>16#80000000 = Channel Off, 16#80010000 = 0-10V, 16#80030000 = 0-20mA
 } L230_RX_PDO_t;
 #pragma pack(pop)
 
@@ -74,31 +74,31 @@ typedef struct
 
 	// TxPDO 0x1A02 - X21_CPU_Pt1 
 	struct {
-		float Pt_Value;	//0x63A0 (value in ohm)
+		float Pt_Value;		//0x63A0 (value in ohm)
 		uint32_t Pt_State;	//0x63B0 (Bit 0 Error PT100)
 	} X21_CPU_Pt1;
 
 
-	// TxPDO 0x1A03 - X21_CPU_Pt2
+	// TxPDO 0x1A03 - X22_CPU_Pt2
 	struct {
-		float Pt_Value;	//0x63C0 (value in ohm)
+		float Pt_Value;		//0x63C0 (value in ohm)
 		uint32_t Pt_State;	//0x63D0 (Bit 0 Error PT100)
 	} X22_CPU_Pt2;
 
-	// TxPDO 0x1A04 - X21_CPU_VC1 
+	// TxPDO 0x1A04 - X23_CPU_VC1 
 	struct {
-		float VC_Value;	//0x63C0 (value in V/mA)
-		uint32_t VC_State;	//0x69C0 (Bit 0 Error U/I)
+		float VC_Value;		//0x63E0 (value in V/mA)
+		uint32_t VC_State;	//0x63F0 (Bit 0 Error U/I)
 	} X23_CPU_VC1;
 
 
-	// TxPDO 0x1A05 - L230_DO_Byte1
+	// TxPDO 0x1A05
 	struct {
-		uint32_t ProductCode;
-		uint32_t SerialNumber;
-		uint32_t HW_Version;
-		uint32_t FW_Version;
-		uint16_t AliasAddress;
+		uint32_t ProductCode;	//0x6400
+		uint32_t SerialNumber;	//0x6401
+		uint32_t HW_Version;	//0x6402
+		uint32_t FW_Version;	//0x6403
+		uint16_t AliasAddress;	//0x6404 Hex switch
 	} slaveinfo;
 
 	struct {

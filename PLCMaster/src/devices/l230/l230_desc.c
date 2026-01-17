@@ -43,6 +43,7 @@ static const TagDesc_t L230_TAGS[] = {
     { "X21_CPU_Pt1_Ctrl", TAGDIR_OUT, TAG_T_U32, (uint32_t)offsetof(L230_RX_PDO_t, X21_CPU_Pt1_Ctrl), 0, NULL, NULL },
     { "X22_CPU_Pt2_Ctrl", TAGDIR_OUT, TAG_T_U32, (uint32_t)offsetof(L230_RX_PDO_t, X22_CPU_Pt2_Ctrl), 0, NULL, NULL },
     { "X23_CPU_VC1_Ctrl", TAGDIR_OUT, TAG_T_U32, (uint32_t)offsetof(L230_RX_PDO_t, X23_CPU_VC1_Ctrl), 0, NULL, NULL },
+    { "AliasAddress", TAGDIR_IN, TAG_T_U16, (uint16_t)offsetof(L230_TX_PDO_t, slaveinfo.AliasAddress), 0, NULL, NULL },
 };
 
 static void config_hook_EL230(ecx_contextt* ctx, uint16_t slave)

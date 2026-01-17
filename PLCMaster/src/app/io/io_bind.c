@@ -1,70 +1,46 @@
 /* IO view bindings. */
 
+#include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
+#include "app/config/config_static.h"
 #include "app/io/io_bind.h"
 
-int io_view_bind(IOView_t *io, const TagTable_t *tags)
+static int bind_view_by_offset(void *view, size_t view_size, const TagTable_t *tags, const AppTagBind_t *binds,
+			       size_t bind_count, const char *label)
 {
-	typedef struct
-	{
-		TagId_t *dst;
-		const char *name;
-	} IoBindDesc_t;
-
-	const IoBindDesc_t kIoBinds[] = {
-		{ &io->X15_Out0, "CPU_IO.X15_Out0" },
-		{ &io->X12_Out1, "CPU_IO.X12_Out1" },
-		{ &io->X13_Out2, "CPU_IO.X13_Out2" },
-		{ &io->X3_Out3, "CPU_IO.X3_Out3" },
-		{ &io->X4_Out4, "CPU_IO.X4_Out4" },
-		{ &io->X14_Out5, "CPU_IO.X14_Out5" },
-		{ &io->X1_Out6, "CPU_IO.X1_Out6" },
-		{ &io->X11_Out0, "CPU_IO.X11_Out0" },
-		{ &io->X10_Out1, "CPU_IO.X10_Out1" },
-		{ &io->X5_Out2, "CPU_IO.X5_Out2" },
-		{ &io->X6_Out3, "CPU_IO.X6_Out3" },
-		{ &io->X7_Out4, "CPU_IO.X7_Out4" },
-		{ &io->X8_Out5, "CPU_IO.X8_Out5" },
-		{ &io->X9_Out6, "CPU_IO.X9_Out6" },
-		{ &io->X8a_Out7, "CPU_IO.X8a_Out7" },
-		{ &io->X30_2_In0, "CPU_IO.X30_2_In0" },
-		{ &io->X30_4_In1, "CPU_IO.X30_4_In1" },
-		{ &io->X30_6_In2, "CPU_IO.X30_6_In2" },
-		{ &io->X30_8_In3, "CPU_IO.X30_8_In3" },
-		{ &io->X30_11_In4, "CPU_IO.X30_11_In4" },
-		{ &io->X30_13_In5, "CPU_IO.X30_13_In5" },
-		{ &io->X30_19_In6, "CPU_IO.X30_19_In6" },
-		{ &io->X30_21_In7, "CPU_IO.X30_21_In7" },
-		{ &io->X55_In0, "CPU_IO.X55_In0" },
-		{ &io->X21_CPU_Pt1_Pt_Value, "CPU_IO.X21_CPU_Pt1.Pt_Value" },
-		{ &io->X21_CPU_Pt1_Pt_State, "CPU_IO.X21_CPU_Pt1.Pt_State" },
-		{ &io->X22_CPU_Pt2_Pt_Value, "CPU_IO.X22_CPU_Pt2.Pt_Value" },
-		{ &io->X22_CPU_Pt2_Pt_State, "CPU_IO.X22_CPU_Pt2.Pt_State" },
-		{ &io->X23_CPU_VC1_VC_Value, "CPU_IO.X23_CPU_VC1.VC_Value" },
-		{ &io->X23_CPU_VC1_VC_State, "CPU_IO.X23_CPU_VC1.VC_State" },
-		{ &io->X21_CPU_Pt1_Ctrl, "CPU_IO.X21_CPU_Pt1_Ctrl" },
-		{ &io->X21_CPU_Pt2_Ctrl, "CPU_IO.X22_CPU_Pt2_Ctrl" },
-		{ &io->X23_CPU_VC1_Ctrl, "CPU_IO.X23_CPU_VC1_Ctrl" },
-	};
 	size_t index;
 
-	if (io == NULL || tags == NULL)
+	if (view == NULL || tags == NULL || binds == NULL || bind_count == 0)
 	{
 		return -1;
 	}
 
-	for (index = 0; index < (sizeof(kIoBinds) / sizeof(kIoBinds[0])); ++index)
+	memset(view, 0, view_size);
+
+	for (index = 0; index < bind_count; ++index)
 	{
-		TagId_t id = tag_table_find_id(tags, kIoBinds[index].name);
+		TagId_t id = tag_table_find_id(tags, binds[index].name);
 		if (id == 0)
 		{
-			printf("Missing IO tag: %s\n", kIoBinds[index].name);
+			printf("Missing %s tag: %s\n", label, binds[index].name);
 			return -1;
 		}
 
-		*(kIoBinds[index].dst) = id;
+		{
+			TagId_t *dst = (TagId_t *)((uint8_t *)view + binds[index].offset);
+			*dst = id;
+		}
 	}
 
 	return 0;
+}
+
+int io_view_bind(IOView_t *io, const TagTable_t *tags)
+{
+	size_t count = 0;
+	const AppTagBind_t *binds = app_config_get_io_view_binds(&count);
+
+	return bind_view_by_offset(io, sizeof(*io), tags, binds, count, "IO");
 }

@@ -16,14 +16,14 @@ typedef struct
 	union {
 		uint8_t L400_DO_Byte0;
 		struct {
-			uint8_t X14_Out0 : 1;
+			uint8_t X14_Out0 : 1;	//%OX1.20.0
 			uint8_t X15_Out1 : 1;
 			uint8_t X16A_Out2 : 1;
 			uint8_t X17_Out3 : 1;
-			uint8_t X18_Out4 : 1;
+			uint8_t X18_Out4 : 1;	//%OX1.20.4
 			uint8_t X19_Out5 : 1;
 			uint8_t X20_Out6 : 1;
-			uint8_t X21_Out7 : 1;
+			uint8_t X21_Out7 : 1;	//%OX1.20.7
 		} L400_DO_Byte0_bits;
 	};
 
@@ -31,13 +31,13 @@ typedef struct
 	union {
 		uint8_t L400_DO_Byte1;
 		struct {
-			uint8_t X49_Out0 : 1;
-			uint8_t X48_Out1 : 1;
-			uint8_t X8_Out2 : 1;
+			uint8_t X49_Out0 : 1;	//%OX1.21.0
+			uint8_t X48_Out1 : 1;	//%OX1.21.1
+			uint8_t X8_Out2 : 1;	//%OX1.21.2
 			uint8_t X9_Out3 : 1;
 			uint8_t X10_Out4 : 1;
 			uint8_t X11_Out5 : 1;
-			uint8_t X12_Out6 : 1;
+			uint8_t X12_Out6 : 1;	//%OX1.21.6
 			uint8_t X13_Out7 : 1;
 		} L400_DO_Byte1_bits;
 	};
@@ -89,7 +89,7 @@ typedef struct
 	// RxPDO 0x1606 - X22_CPU_Pt2
 	uint32_t X22_CPU_Pt2_Ctrl;
 	// RxPDO 0x1607 - X23_CPU_VC1
-	uint32_t X23_CPU_VC1_Ctrl; //<Comment>16#80000000 = Channel Off
+	uint32_t X23_CPU_VC1_Ctrl; //<Comment>16#80000000 = Channel Off, 16#80010000 = 0-10V, 16#80030000 = 0-20mA
 	// RxPDO 0x1608 - X31_DAIO_Pt1
 	uint32_t X31_DAIO_Pt1_Ctrl;
 	// RxPDO 0x1609 - X32_DAIO_Pt2
@@ -108,33 +108,33 @@ typedef struct
 	uint32_t X38_DAIO_Pt8_Ctrl;
 
 	// RxPDO 0x1610 - X41_1_DAIO_VC1
-	uint32_t X41_1_DAIO_VC1_Ctrl; //<Comment>16#80000000 = Channel Off
+	uint32_t X41_1_DAIO_VC1_Ctrl; //<Comment>16#80000000 = Channel Off, 16#80010000 = 0-10V, 16#80030000 = 0-20mA
 	// RxPDO 0x1611 - X41_3_DAIO_VC2
-	uint32_t X41_3_DAIO_VC2_Ctrl; //<Comment>16#80000000 = Channel Off
+	uint32_t X41_3_DAIO_VC2_Ctrl; //<Comment>16#80000000 = Channel Off, 16#80010000 = 0-10V, 16#80030000 = 0-20mA
 	// RxPDO 0x1612 - X40_1_DAIO_VC3
-	uint32_t X40_1_DAIO_VC3_Ctrl; //<Comment>16#80000000 = Channel Off
+	uint32_t X40_1_DAIO_VC3_Ctrl; //<Comment>16#80000000 = Channel Off, 16#80010000 = 0-10V, 16#80030000 = 0-20mA
 	// RxPDO 0x1613 - X40_3_DAIO_VC4
-	uint32_t X40_3_DAIO_VC4_Ctrl; //<Comment>16#80000000 = Channel Off
+	uint32_t X40_3_DAIO_VC4_Ctrl; //<Comment>16#80000000 = Channel Off, 16#80010000 = 0-10V, 16#80030000 = 0-20mA
 	// RxPDO 0x1614 - X40_5_DAIO_VC5
-	uint32_t X40_5_DAIO_VC5_Ctrl; //<Comment>16#80000000 = Channel Off
+	uint32_t X40_5_DAIO_VC5_Ctrl; //<Comment>16#80000000 = Channel Off, 16#80010000 = 0-10V, 16#80030000 = 0-20mA
 	// RxPDO 0x1615 - X40_7_DAIO_VC6
-	uint32_t X40_7_DAIO_VC6_Ctrl; //<Comment>16#80000000 = Channel Off
+	uint32_t X40_7_DAIO_VC6_Ctrl; //<Comment>16#80000000 = Channel Off, 16#80010000 = 0-10V, 16#80030000 = 0-20mA
 	// RxPDO 0x1616 - X42_1_DAIO_AC1
 	uint32_t X42_1_DAIO_AC1_Ctrl;
 	// RxPDO 0x1617 - X42_3_DAIO_AC2
 	uint32_t X42_3_DAIO_AC2_Ctrl;
 	// RxPDO 0x1618 - X5_1_DAIO_Aout1
-	uint32_t X5_1_DAIO_Aout1_Value; //<Comment>HiWord: 8001 = Voltage; 8003 = Current
+	uint32_t X5_1_DAIO_Aout1_Value; //<Comment>HiWord: 8001 = Voltage; 8003 = Current  LoWord: 0V/mA = 0000 .. 0FA00 = 10V/20mA
 	// RxPDO 0x1619 - X5_3_DAIO_Aout2
-	uint32_t X5_3_DAIO_Aout2_Value; //<Comment>HiWord: 8001 = Voltage; 8003 = Current
+	uint32_t X5_3_DAIO_Aout2_Value; //<Comment>HiWord: 8001 = Voltage; 8003 = Current  LoWord: 0V/mA = 0000 .. 0FA00 = 10V/20mA
 	// RxPDO 0x161A - X5_5_DAIO_Aout3
-	uint32_t X5_5_DAIO_Aout3_Value; //<Comment>HiWord: 8001 = Voltage; 8003 = Current
+	uint32_t X5_5_DAIO_Aout3_Value; //<Comment>HiWord: 8001 = Voltage; 8003 = Current  LoWord: 0V/mA = 0000 .. 0FA00 = 10V/20mA
 	// RxPDO 0x161B - X5_7_DAIO_Aout4
-	uint32_t X5_7_DAIO_Aout4_Value; //<Comment>HiWord: 8001 = Voltage; 8003 = Current
+	uint32_t X5_7_DAIO_Aout4_Value; //<Comment>HiWord: 8001 = Voltage; 8003 = Current  LoWord: 0V/mA = 0000 .. 0FA00 = 10V/20mA
 	// RxPDO 0x161C - X6_1_DAIO_Aout5
-	uint32_t X6_1_DAIO_Aout5_Value; //<Comment>HiWord: 8001 = Voltage; 8003 = Current
+	uint32_t X6_1_DAIO_Aout5_Value; //<Comment>HiWord: 8001 = Voltage; 8003 = Current  LoWord: 0V/mA = 0000 .. 0FA00 = 10V/20mA
 	// RxPDO 0x161D - X6_3_DAIO_Aout6
-	uint32_t X6_3_DAIO_Aout6_Value; //<Comment>HiWord: 8001 = Voltage; 8003 = Current
+	uint32_t X6_3_DAIO_Aout6_Value; //<Comment>HiWord: 8001 = Voltage; 8003 = Current  LoWord: 0V/mA = 0000 .. 0FA00 = 10V/20mA
 } L400_RX_PDO_t;
 #pragma pack(pop)
 
