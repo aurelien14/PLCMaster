@@ -33,10 +33,30 @@ typedef struct
 	size_t count;
 } ProcessStore_t;
 
+typedef struct
+{
+	TagType_t type;
+	TagValue_u v;
+} HmiValue_t;
+
+typedef struct
+{
+	HmiValue_t values[64];
+	size_t count;
+} HmiStore_t;
+
+typedef enum
+{
+	START_HMI_INIT = 0,
+	START_COLD = 1,
+	START_FACTORY = 2,
+} StartMode_t;
+
 typedef struct Runtime
 {
 	TagTable_t tag_table;
 	ProcessStore_t proc_store;
+	HmiStore_t hmi_store;
 	void* status_view;
 	BackendDriver_t** backends;
 	size_t backend_count;

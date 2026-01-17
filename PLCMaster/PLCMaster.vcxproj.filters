@@ -32,6 +32,7 @@
     <ClCompile Include="src\devices\l400\l400_desc.c" />
     <ClCompile Include="src\app\plc\libs\temp_converter.c" />
     <ClCompile Include="src\app\plc\plc_task_registry.c" />
+    <ClCompile Include="src\app\plc\store_init.c" />
     <ClCompile Include="src\app\plc\tasks\plc_tasks.c" />
     <ClCompile Include="src\app\plc\plc_runtime.c" />
     <ClCompile Include="src\app\io\hmi_view.c" />
@@ -80,6 +81,7 @@
     <ClInclude Include="src\app\plc\plc_task_registry.h" />
     <ClInclude Include="src\app\plc\tasks\plc_tasks.h" />
     <ClInclude Include="src\app\plc\plc_runtime.h" />
+    <ClInclude Include="src\app\plc\store_init.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\system\builder\backend_list.def" />

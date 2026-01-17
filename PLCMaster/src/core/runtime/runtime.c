@@ -17,6 +17,7 @@ int runtime_init(Runtime_t* rt)
 	}
 
 	memset(&rt->proc_store, 0, sizeof(rt->proc_store));
+	memset(&rt->hmi_store, 0, sizeof(rt->hmi_store));
 	rt->status_view = NULL;
 	memset(rt->backend_array, 0, sizeof(rt->backend_array));
 	rt->backends = rt->backend_array;
@@ -34,6 +35,7 @@ void runtime_deinit(Runtime_t* rt)
 
 	tag_table_deinit(&rt->tag_table);
 	memset(&rt->proc_store, 0, sizeof(rt->proc_store));
+	memset(&rt->hmi_store, 0, sizeof(rt->hmi_store));
 	rt->status_view = NULL;
 	memset(rt->backend_array, 0, sizeof(rt->backend_array));
 	rt->backends = rt->backend_array;

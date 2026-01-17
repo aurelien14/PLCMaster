@@ -376,25 +376,6 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 			value_slot = &rt->proc_store.values[process_index];
 			memset(value_slot, 0, sizeof(*value_slot));
 			value_slot->type = proc_desc->type;
-			switch (proc_desc->type) {
-			case TAG_T_BOOL:
-				value_slot->v.b = proc_desc->initial.b;
-				break;
-			case TAG_T_U8:
-				value_slot->v.u8 = proc_desc->initial.u8;
-				break;
-			case TAG_T_U16:
-				value_slot->v.u16 = proc_desc->initial.u16;
-				break;
-			case TAG_T_U32:
-				value_slot->v.u32 = proc_desc->initial.u32;
-				break;
-			case TAG_T_REAL:
-				value_slot->v.f = proc_desc->initial.f;
-				break;
-			default:
-				goto cleanup;
-			}
 		}
 
 		rt->proc_store.count = config->process_var_count;
@@ -406,26 +387,12 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 
 	if (config->hmi_tags != NULL) {
 		size_t hmi_index;
+		size_t max_hmi = sizeof(rt->hmi_store.values) / sizeof(rt->hmi_store.values[0]);
+		size_t hmi_var_index = 0;
 		for (hmi_index = 0; hmi_index < config->hmi_tag_count; ++hmi_index) {
 			const HmiTagDesc_t *hmi_desc = &config->hmi_tags[hmi_index];
-			TagId_t target_id;
-			const TagEntry_t *target_entry;
 			TagEntry_t entry;
 			int rc;
-
-			if (hmi_desc->alias_of == NULL) {
-				goto cleanup;
-			}
-
-			target_id = tag_table_find_id(&rt->tag_table, hmi_desc->alias_of);
-			if (target_id == 0) {
-				goto cleanup;
-			}
-
-			target_entry = tag_table_get(&rt->tag_table, target_id);
-			if (target_entry == NULL) {
-				goto cleanup;
-			}
 
 			memset(&entry, 0, sizeof(entry));
 			entry.full_name = entry.full_name_storage;
@@ -434,15 +401,59 @@ int system_build(Runtime_t *rt, const SystemConfig_t *config)
 				goto cleanup;
 			}
 
-			entry.type = target_entry->type;
-			entry.kind = TAGK_HMI_ALIAS;
-			entry.ref.hmi_alias.target = target_id;
-			entry.ref.hmi_alias.access = (uint8_t)hmi_desc->access;
+			if (hmi_desc->kind == HMI_TAG_ALIAS) {
+				TagId_t target_id;
+				const TagEntry_t *target_entry;
+
+				if (hmi_desc->alias.alias_of == NULL) {
+					printf("[CFG] HMI alias '%s' missing alias_of\n", entry.full_name_storage);
+					goto cleanup;
+				}
+
+				target_id = tag_table_find_id(&rt->tag_table, hmi_desc->alias.alias_of);
+				if (target_id == 0) {
+					printf("[CFG] HMI alias '%s' points to missing tag '%s'\n",
+						entry.full_name_storage, hmi_desc->alias.alias_of);
+					goto cleanup;
+				}
+
+				target_entry = tag_table_get(&rt->tag_table, target_id);
+				if (target_entry == NULL) {
+					printf("[CFG] HMI alias '%s' could not resolve tag '%s'\n",
+						entry.full_name_storage, hmi_desc->alias.alias_of);
+					goto cleanup;
+				}
+
+				entry.type = target_entry->type;
+				entry.kind = TAGK_HMI_ALIAS;
+				entry.ref.hmi_alias.target = target_id;
+				entry.ref.hmi_alias.access = (uint8_t)hmi_desc->access;
+			} else if (hmi_desc->kind == HMI_TAG_VAR) {
+				HmiValue_t *value_slot;
+
+				if (hmi_var_index >= max_hmi) {
+					goto cleanup;
+				}
+
+				entry.type = hmi_desc->var.type;
+				entry.kind = TAGK_HMI_VAR;
+				entry.ref.hmi_var.index = (uint32_t)hmi_var_index;
+				entry.ref.hmi_var.access = (uint8_t)hmi_desc->access;
+
+				value_slot = &rt->hmi_store.values[hmi_var_index];
+				memset(value_slot, 0, sizeof(*value_slot));
+				value_slot->type = hmi_desc->var.type;
+				++hmi_var_index;
+			} else {
+				goto cleanup;
+			}
 
 			if (tag_table_add(&rt->tag_table, &entry) != 0) {
 				goto cleanup;
 			}
 		}
+
+		rt->hmi_store.count = hmi_var_index;
 	}
 
 	for (device_index = 0; device_index < config->device_count; ++device_index) {

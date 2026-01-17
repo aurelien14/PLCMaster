@@ -33,6 +33,12 @@ static const TagEntry_t *resolve_entry(Runtime_t* rt, TagId_t id, int for_write,
 		return resolve_entry(rt, entry->ref.hmi_alias.target, for_write, depth + 1);
 	}
 
+	if (entry->kind == TAGK_HMI_VAR) {
+		if (for_write && entry->ref.hmi_var.access == 0U) {
+			return NULL;
+		}
+	}
+
 	return entry;
 }
 
@@ -67,6 +73,26 @@ static ProcValue_t *get_proc_value(Runtime_t *rt, const TagEntry_t *entry)
 	}
 
 	value = &rt->proc_store.values[entry->ref.proc.index];
+	if (value->type != entry->type) {
+		return NULL;
+	}
+
+	return value;
+}
+
+static HmiValue_t *get_hmi_value(Runtime_t *rt, const TagEntry_t *entry)
+{
+	HmiValue_t *value;
+
+	if (rt == NULL || entry == NULL) {
+		return NULL;
+	}
+
+	if (entry->ref.hmi_var.index >= rt->hmi_store.count) {
+		return NULL;
+	}
+
+	value = &rt->hmi_store.values[entry->ref.hmi_var.index];
 	if (value->type != entry->type) {
 		return NULL;
 	}
@@ -281,6 +307,15 @@ int tag_read(Runtime_t* rt, TagId_t id, void* out, size_t out_sz)
 		}
 		value = proc->v;
 		break;
+	case TAGK_HMI_VAR:
+	{
+		HmiValue_t *hmi = get_hmi_value(rt, entry);
+		if (hmi == NULL) {
+			return -EINVAL;
+		}
+		value = hmi->v;
+	}
+		break;
 	case TAGK_IO:
 	{
 		int rc = read_io_value(rt, entry, &value);
@@ -367,6 +402,15 @@ int tag_write(Runtime_t* rt, TagId_t id, const void* in, size_t in_sz)
 		}
 		proc->v = value;
 		return 0;
+	case TAGK_HMI_VAR:
+	{
+		HmiValue_t *hmi = get_hmi_value(rt, entry);
+		if (hmi == NULL) {
+			return -EINVAL;
+		}
+		hmi->v = value;
+		return 0;
+	}
 	case TAGK_IO:
 		return write_io_value(rt, entry, value);
 	default:

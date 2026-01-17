@@ -141,6 +141,7 @@
     <ClCompile Include="src\app\io\proc_view.c" />
     <ClCompile Include="src\app\plc\libs\temp_converter.c" />
     <ClCompile Include="src\app\plc\plc_task_registry.c" />
+    <ClCompile Include="src\app\plc\store_init.c" />
     <ClCompile Include="src\core\backend\backend_registry.c" />
     <ClCompile Include="src\core\ipc\spsc_ring.c" />
     <ClCompile Include="src\core\ipc\tag_rpc.c" />
@@ -208,6 +209,7 @@
     <ClInclude Include="src\app\io\proc_view.h" />
     <ClInclude Include="src\app\plc\plc_app.h" />
     <ClInclude Include="src\app\plc\tasks\plc_tasks.h" />
+    <ClInclude Include="src\app\plc\store_init.h" />
     <ClInclude Include="src\app\plc\plc_runtime.h" />
     <ClInclude Include="src\app\diag\ethercat_diag.h" />
     <ClInclude Include="src\core\plc\plc_scheduler.h" />
