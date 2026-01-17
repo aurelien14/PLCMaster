@@ -75,7 +75,16 @@ typedef struct PLC_TaskConfig
 	bool enabled;			/* true by default */
 } PLC_TaskConfig_t;
 
+typedef struct AppTagBind
+{
+	size_t offset;		/* offsetof(ViewStruct, field) */
+	const char *name;	/* tag full name: "CPU_IO.X15_Out0" ou "hmi.run" ou "proc.counter_test" */
+} AppTagBind_t;
+
 const SystemConfig_t *get_static_config(void);
 const PLC_TaskConfig_t *app_config_get_plc_tasks(size_t *out_count);
+const AppTagBind_t *app_config_get_io_view_binds(size_t *out_count);
+const AppTagBind_t *app_config_get_hmi_view_binds(size_t *out_count);
+const AppTagBind_t *app_config_get_proc_view_binds(size_t *out_count);
 
 #endif /* CONFIG_STATIC_H */
